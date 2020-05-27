@@ -63,6 +63,7 @@ sourceSets {
         runtimeClasspath += sourceSets.api.output
     }
     additions { setupSourceSet(sourceSets.additions, 'additions') }
+    research { setupSourceSet(sourceSets.research, 'research') }
     generators { setupSourceSet(sourceSets.generators, 'generators') }
     defense { setupSourceSet(sourceSets.defense, 'defense') }
     tools { setupSourceSet(sourceSets.tools, 'tools') }
@@ -73,6 +74,7 @@ sourceSets {
     //Data gen modules for the different modules
     datagenmain { setupDataGenSourceSet(sourceSets.datagenmain, null, 'main') }
     datagenadditions { setupDataGenSourceSet(sourceSets.datagenadditions, sourceSets.additions, 'additions') }
+    datagenresearch { setupDataGenSourceSet(sourceSets.datagenresearch, sourceSets.research, 'research') }
     datagengenerators { setupDataGenSourceSet(sourceSets.datagengenerators, sourceSets.generators, 'generators') }
     datagendefense { setupDataGenSourceSet(sourceSets.datagendefense, sourceSets.defense, 'defense') }
     datagentools { setupDataGenSourceSet(sourceSets.datagentools, sourceSets.tools, 'tools') }
@@ -113,11 +115,11 @@ def setupDataGenSourceSet(SourceSet datagenSourceSet, SourceSet baseSourceSet, S
 configurations {
     //Make sure all our sub source set stuff extends the proper base methods so that
     // they can see all the dependencies we have in dependencies including forge
-    def compileExtenders = [apiCompile, additionsCompile, generatorsCompile, defenseCompile, toolsCompile, testCompile,
+    def compileExtenders = [apiCompile, additionsCompile, researchCompile, generatorsCompile, defenseCompile, toolsCompile, testCompile,
                             datagenmainCompile, datagenadditionsCompile, datagengeneratorsCompile, datagendefenseCompile, datagentoolsCompile]
-    def compileOnlyExtenders = [apiCompileOnly, additionsCompileOnly, generatorsCompileOnly, defenseCompileOnly, toolsCompileOnly, testCompileOnly,
+    def compileOnlyExtenders = [apiCompileOnly, additionsCompileOnly, researchCompileOnly, generatorsCompileOnly, defenseCompileOnly, toolsCompileOnly, testCompileOnly,
                                 datagenmainCompileOnly, datagenadditionsCompileOnly, datagengeneratorsCompileOnly, datagendefenseCompileOnly, datagentoolsCompileOnly]
-    def runtimeOnlyExtenders = [apiRuntimeOnly, additionsRuntimeOnly, generatorsRuntimeOnly, defenseRuntimeOnly, toolsRuntimeOnly,
+    def runtimeOnlyExtenders = [apiRuntimeOnly, additionsRuntimeOnly, researchRuntimeOnly, generatorsRuntimeOnly, defenseRuntimeOnly, toolsRuntimeOnly,
                                 datagenmainRuntimeOnly, datagenadditionsRuntimeOnly, datagengeneratorsRuntimeOnly, datagendefenseRuntimeOnly, datagentoolsRuntimeOnly]
     for (def compileExtender : compileExtenders) {
         compileExtender.extendsFrom(compile)
@@ -197,6 +199,9 @@ minecraft {
                 mekanismadditions {
                     source(sourceSets.additions)
                 }
+                mekanismresearch {
+                    source(sourceSets.research)
+                }
                 mekanismgenerators {
                     source(sourceSets.generators)
                 }
@@ -218,6 +223,9 @@ minecraft {
                 }
                 mekanismadditions {
                     source(sourceSets.additions)
+                }
+                mekanismresearch {
+                    source(sourceSets.research)
                 }
                 mekanismgenerators {
                     source(sourceSets.generators)
@@ -241,6 +249,8 @@ minecraft {
                     '--existing', sourceSets.main.resources.srcDirs[0],
                     '--mod', 'mekanismadditions',
                     '--existing', sourceSets.additions.resources.srcDirs[0],
+                    '--mod', 'mekanismresearch',
+                    '--existing', sourceSets.research.resources.srcDirs[0],
                     '--mod', 'mekanismgenerators',
                     '--existing', sourceSets.generators.resources.srcDirs[0],
                     '--mod', 'mekanismdefense',
@@ -254,6 +264,9 @@ minecraft {
                 }
                 mekanismadditions {
                     sources(sourceSets.additions, sourceSets.datagenadditions)
+                }
+                mekanismresearch {
+                    sources(sourceSets.research, sourceSets.datagenresearch)
                 }
                 mekanismgenerators {
                     sources(sourceSets.generators, sourceSets.datagengenerators)
@@ -324,6 +337,15 @@ task replaceResourcesAdditions(type: Copy) {
     into "$buildDir/resources/additions/"
 }
 
+task replaceResourcesResearch(type: Copy) {
+    outputs.upToDateWhen { false }
+    from(sourceSets.research.resources) {
+        include "META-INF/mods.toml"
+        expand version_properties
+    }
+    into "$buildDir/resources/research/"
+}
+
 task replaceResourcesGenerators(type: Copy) {
     outputs.upToDateWhen { false }
     from(sourceSets.generators.resources) {
@@ -367,6 +389,18 @@ processAdditionsResources {
     //Exclude the mods.toml file as we manually handle that and don't want it to invalidate our cache
     exclude 'META-INF/mods.toml'
     finalizedBy(replaceResourcesAdditions)
+    //Minify json resources
+    doLast {
+        fileTree(dir: getOutputs().getFiles().getAsPath(), includes: jsonPatterns).each {
+            File file -> file.setText(JsonOutput.toJson(new JsonSlurper().parse(file)))
+        }
+    }
+}
+
+processResearchResources {
+    //Exclude the mods.toml file as we manually handle that and don't want it to invalidate our cache
+    exclude 'META-INF/mods.toml'
+    finalizedBy(replaceResourcesResearch)
     //Minify json resources
     doLast {
         fileTree(dir: getOutputs().getFiles().getAsPath(), includes: jsonPatterns).each {
@@ -432,6 +466,11 @@ task additionsJar(type: Jar) {
     from sourceSets.additions.output
 }
 
+task researchJar(type: Jar) {
+    archiveName = "Mekanismresearch-${project.version}.jar"
+    from sourceSets.research.output
+}
+
 task generatorsJar(type: Jar) {
     archiveName = "MekanismGenerators-${project.version}.jar"
     from sourceSets.generators.output
@@ -456,6 +495,7 @@ artifacts {
     archives apiJar
     archives coreJar
     archives additionsJar
+    archives researchJar
     archives generatorsJar
     archives defenseJar
     archives toolsJar
@@ -465,6 +505,7 @@ reobf {
     apiJar { classpath = sourceSets.api.compileClasspath }
     coreJar { classpath = sourceSets.main.compileClasspath }
     additionsJar { classpath = sourceSets.additions.compileClasspath }
+    researchJar { classpath = sourceSets.research.compileClasspath }
     generatorsJar { classpath = sourceSets.generators.compileClasspath }
     defenseJar { classpath = sourceSets.defense.compileClasspath }
     toolsJar { classpath = sourceSets.tools.compileClasspath }
@@ -481,7 +522,7 @@ task optimizePng {
     def pngPatterns = ["**/*.png"]
 
     doLast {
-        def sourceSets = [sourceSets.main, sourceSets.additions, sourceSets.generators, sourceSets.defense, sourceSets.tools]
+        def sourceSets = [sourceSets.main, sourceSets.additions, sourceSets.research, sourceSets.generators, sourceSets.defense, sourceSets.tools]
         for (def sourceSet : sourceSets) {
             for (dir in sourceSet.resources.srcDirs) {
                 fileTree(dir: dir, includes: pngPatterns).each { File file ->

@@ -1,0 +1,18 @@
+modLoader="javafml"
+loaderVersion="[${loader_version},)"
+issueTrackerURL="https://github.com/Sylvia-Olliff/Mekanism/issues"
+
+[[mods]]
+    modId="mekanismresearch"
+    version="${version}"
+    displayName="Mekanism: Research"
+    displayURL="http://aidancbrady.com/mekanism/"
+    authors="Sylvia"
+    credits="Aidancbrady"
+    description='''Research module for Mekanism'''
+
+[[dependencies.mekanismresearch]]
+    modId="mekanism"
+    mandatory=true
+    versionRange="[${version}]"
+    side="BOTH"

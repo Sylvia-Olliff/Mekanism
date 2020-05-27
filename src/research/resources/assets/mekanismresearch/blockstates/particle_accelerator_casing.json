@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "mekanismresearch:block/accelerator/casing"
+    },
+    "facing=south": {
+      "model": "mekanismresearch:block/accelerator/casing",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "mekanismresearch:block/accelerator/casing",
+      "y": 90
+    },
+    "facing=west": {
+      "model": "mekanismresearch:block/accelerator/casing",
+      "y": -90
+    }
+  }
+}

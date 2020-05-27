@@ -1,0 +1,26 @@
+package mekanism.research.common.content.accelerator;
+
+import mekanism.api.math.FloatingLong;
+import mekanism.common.capabilities.energy.BasicEnergyContainer;
+import mekanism.common.inventory.container.sync.dynamic.ContainerSync;
+import mekanism.common.lib.multiblock.MultiblockData;
+import mekanism.research.common.tile.accelerator.TileEntityParticleAcceleratorBlock;
+import net.minecraft.world.World;
+
+public class ParticleAcceleratorMultiblockData extends MultiblockData {
+    private static final FloatingLong MAX_ENERGY = FloatingLong.createConst(500_000_000);
+
+    @ContainerSync
+    public BasicEnergyContainer energyContainer;
+
+    public ParticleAcceleratorMultiblockData(TileEntityParticleAcceleratorBlock tile) {
+        super(tile);
+
+        energyContainers.add(energyContainer = BasicEnergyContainer.output(MAX_ENERGY, this));
+    }
+
+    @Override
+    public boolean tick(World world) {
+        return super.tick(world);
+    }
+}
