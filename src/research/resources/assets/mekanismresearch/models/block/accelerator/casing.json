@@ -23,7 +23,7 @@
 		{
 			"name": "attachment_1",
 			"from": [3, 0, 15],
-			"to": [12, 9, 16],
+			"to": [12, 9, 15],
 			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 8]},
 			"faces": {
 				"north": {"uv": [5.25, 5.25, 7.5, 7.5], "texture": "#0"},
@@ -37,7 +37,7 @@
 		{
 			"name": "attachment_2",
 			"from": [3, 0, 0],
-			"to": [12, 9, 1],
+			"to": [12, 9, 0],
 			"rotation": {"angle": 0, "axis": "y", "origin": [8, 8, 8]},
 			"faces": {
 				"north": {"uv": [0.25, 5, 2.5, 7.25], "texture": "#0"},

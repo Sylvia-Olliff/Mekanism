@@ -9,7 +9,7 @@ import net.minecraft.world.World;
 
 public class ParticleAcceleratorMultiblockData extends MultiblockData {
     private static final FloatingLong MAX_ENERGY = FloatingLong.createConst(500_000_000);
-
+    // TODO: Change Model for PAccelerator to use Attribute BlockShape rather than values in model.json
     @ContainerSync
     public BasicEnergyContainer energyContainer;
 
