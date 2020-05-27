@@ -8,6 +8,7 @@ import mekanism.common.lib.multiblock.MultiblockManager;
 import mekanism.research.common.config.MekanismResearchConfig;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorCache;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorMultiblockData;
+import mekanism.research.common.content.accelerator.ParticleAcceleratorStructureValidator;
 import mekanism.research.common.registries.ResearchBlocks;
 import mekanism.research.common.registries.ResearchTileEntityTypes;
 import net.minecraft.util.ResourceLocation;
@@ -31,7 +32,7 @@ public class MekanismResearch implements IModule {
      */
     public final Version versionNumber;
 
-    public static MultiblockManager<ParticleAcceleratorMultiblockData> particleAcceleratorManager = new MultiblockManager<>("particleAccelerator", ParticleAcceleratorCache::new);
+    public static MultiblockManager<ParticleAcceleratorMultiblockData> particleAcceleratorManager = new MultiblockManager<>("particleAccelerator", ParticleAcceleratorCache::new, ParticleAcceleratorStructureValidator::new);
 
     public MekanismResearch() {
         Mekanism.modulesLoaded.add(instance = this);
