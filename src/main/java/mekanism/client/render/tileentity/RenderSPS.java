@@ -5,18 +5,17 @@ import javax.annotation.ParametersAreNonnullByDefault;
 import com.google.common.base.Objects;
 import com.mojang.blaze3d.matrix.MatrixStack;
 import mekanism.client.render.effect.BillboardingEffectRenderer;
-import mekanism.client.render.effect.BoltEffect;
 import mekanism.client.render.effect.BoltRenderer;
-import mekanism.client.render.effect.BoltRenderer.BoltData;
-import mekanism.client.render.effect.BoltRenderer.SpawnFunction;
 import mekanism.common.base.ProfilerConstants;
 import mekanism.common.content.sps.SPSMultiblockData;
 import mekanism.common.content.sps.SPSMultiblockData.CoilData;
 import mekanism.common.lib.Color;
+import mekanism.common.lib.effect.BoltEffect;
+import mekanism.common.lib.effect.BoltEffect.BoltRenderInfo;
+import mekanism.common.lib.effect.BoltEffect.SpawnFunction;
+import mekanism.common.lib.effect.CustomEffect;
 import mekanism.common.lib.math.Plane;
-import mekanism.common.lib.math.voxel.VoxelCuboid;
 import mekanism.common.lib.math.voxel.VoxelCuboid.CuboidSide;
-import mekanism.common.particle.custom.CustomEffect;
 import mekanism.common.particle.custom.SPSOrbitEffect;
 import mekanism.common.tile.multiblock.TileEntitySPSCasing;
 import mekanism.common.util.MekanismUtils;
@@ -36,8 +35,7 @@ public class RenderSPS extends MekanismTileEntityRenderer<TileEntitySPSCasing> {
     private static float MIN_SCALE = 0.1F, MAX_SCALE = 4F;
 
     private Minecraft minecraft = Minecraft.getInstance();
-    private BoltRenderer bolts = BoltRenderer.create(BoltEffect.ELECTRICITY, 12, SpawnFunction.delay(6));
-    private BoltRenderer edgeBolts = BoltRenderer.create(BoltEffect.ELECTRICITY, 8, SpawnFunction.NO_DELAY);
+    private BoltRenderer bolts = new BoltRenderer();
 
     public RenderSPS(TileEntityRendererDispatcher renderer) {
         super(renderer);
@@ -46,8 +44,8 @@ public class RenderSPS extends MekanismTileEntityRenderer<TileEntitySPSCasing> {
 
     @Override
     protected void render(TileEntitySPSCasing tile, float partialTick, MatrixStack matrix, IRenderTypeBuffer renderer, int light, int overlayLight, IProfiler profiler) {
-        if (tile.isMaster && tile.getMultiblock().isFormed() && tile.getMultiblock().renderLocation != null) {
-            Vec3d center = new Vec3d(tile.getMultiblock().minLocation).add(new Vec3d(tile.getMultiblock().maxLocation)).add(new Vec3d(1, 1, 1)).scale(0.5);
+        if (tile.isMaster && tile.getMultiblock().isFormed() && tile.getMultiblock().renderLocation != null && tile.getMultiblock().getBounds() != null) {
+            Vec3d center = new Vec3d(tile.getMultiblock().getMinPos()).add(new Vec3d(tile.getMultiblock().getMaxPos())).add(new Vec3d(1, 1, 1)).scale(0.5);
             Vec3d renderCenter = center.subtract(tile.getPos().getX(), tile.getPos().getY(), tile.getPos().getZ());
             if (!minecraft.isGamePaused()) {
                 for (CoilData data : tile.getMultiblock().coilData.coilMap.values()) {
@@ -63,10 +61,13 @@ public class RenderSPS extends MekanismTileEntityRenderer<TileEntitySPSCasing> {
             if (!minecraft.isGamePaused() && !tile.getMultiblock().lastReceivedEnergy.isZero()) {
                 if (rand.nextDouble() < getBoundedScale(energyScale, 0.01F, 0.4F)) {
                     CuboidSide side = CuboidSide.SIDES[rand.nextInt(6)];
-                    Plane plane = Plane.getInnerCuboidPlane(new VoxelCuboid(tile.getMultiblock().minLocation, tile.getMultiblock().maxLocation), side);
+                    Plane plane = Plane.getInnerCuboidPlane(tile.getMultiblock().getBounds(), side);
                     Vec3d endPos = plane.getRandomPoint(rand).subtract(tile.getPos().getX(), tile.getPos().getY(), tile.getPos().getZ());
-                    BoltData data = new BoltData(renderCenter, endPos, 1, 15, 0.01F * getBoundedScale(energyScale, 0.5F, 5));
-                    edgeBolts.update(Objects.hashCode(side.hashCode(), endPos.hashCode()), data, partialTick);
+                    BoltEffect bolt = new BoltEffect(BoltRenderInfo.ELECTRICITY, renderCenter, endPos, 15)
+                          .size(0.01F * getBoundedScale(energyScale, 0.5F, 5))
+                          .lifespan(8)
+                          .spawn(SpawnFunction.NO_DELAY);
+                    bolts.update(Objects.hashCode(side.hashCode(), endPos.hashCode()), bolt, partialTick);
                 }
                 targetEffectCount = (int) getBoundedScale(energyScale, 10, 120);
             }
@@ -78,7 +79,6 @@ public class RenderSPS extends MekanismTileEntityRenderer<TileEntitySPSCasing> {
             }
 
             bolts.render(partialTick, matrix, renderer);
-            edgeBolts.render(partialTick, matrix, renderer);
 
             tile.orbitEffects.forEach(effect -> BillboardingEffectRenderer.render(effect, tile.getPos(), matrix, renderer, tile.getWorld().getGameTime(), partialTick));
 
@@ -98,12 +98,13 @@ public class RenderSPS extends MekanismTileEntityRenderer<TileEntitySPSCasing> {
         return min + scale * (max - min);
     }
 
-    private static BoltData getBoltFromData(CoilData data, BlockPos pos, SPSMultiblockData multiblock, Vec3d center) {
+    private static BoltEffect getBoltFromData(CoilData data, BlockPos pos, SPSMultiblockData multiblock, Vec3d center) {
         Vec3d start = new Vec3d(data.coilPos.offset(data.side)).add(0.5, 0.5, 0.5);
         start = start.add(new Vec3d(data.side.getDirectionVec()).scale(0.5));
         int count = 1 + (data.prevLevel - 1) / 2;
         float size = 0.01F * data.prevLevel;
-        return new BoltData(start.subtract(pos.getX(), pos.getY(), pos.getZ()), center, count, 10, size);
+        return new BoltEffect(BoltRenderInfo.ELECTRICITY, start.subtract(pos.getX(), pos.getY(), pos.getZ()), center, 15)
+              .count(count).size(size).lifespan(8).spawn(SpawnFunction.delay(4));
     }
 
     @Override

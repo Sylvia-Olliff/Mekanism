@@ -29,10 +29,10 @@ public class FormationProtocol<T extends MultiblockData> {
     private Structure structure;
     private MultiblockManager<T> manager;
 
-    Set<BlockPos> locations = new ObjectOpenHashSet<>();
-    Set<BlockPos> innerNodes = new ObjectOpenHashSet<>();
-    Set<ValveData> valves = new ObjectOpenHashSet<>();
-    Set<UUID> idsFound = new ObjectOpenHashSet<>();
+    public Set<BlockPos> locations = new ObjectOpenHashSet<>();
+    public Set<BlockPos> innerNodes = new ObjectOpenHashSet<>();
+    public Set<ValveData> valves = new ObjectOpenHashSet<>();
+    public Set<UUID> idsFound = new ObjectOpenHashSet<>();
 
     public FormationProtocol(IMultiblock<T> tile, Structure structure) {
         pointer = tile;
@@ -70,7 +70,7 @@ public class FormationProtocol<T extends MultiblockData> {
         T structureFound = result.structureFound;
 
         if (structureFound != null && structureFound.locations.contains(pointer.getTilePos())) {
-            pointer.setMultiblockData(structureFound);
+            pointer.setMultiblockData(manager, structureFound);
             structureFound.setFormedForce(true);
             MultiblockCache<T> cache = manager.createCache();
             UUID idToUse = null;

@@ -29,6 +29,9 @@ import mekanism.common.content.gear.mekasuit.ModuleMekaSuit.ModuleLocomotiveBoos
 import mekanism.common.distribution.target.EnergySaveTarget;
 import mekanism.common.integration.energy.EnergyCompatUtils;
 import mekanism.common.item.gear.ItemMekaSuitArmor;
+import mekanism.common.lib.effect.BoltEffect;
+import mekanism.common.lib.effect.BoltEffect.BoltRenderInfo;
+import mekanism.common.lib.effect.BoltEffect.SpawnFunction;
 import mekanism.common.lib.radiation.RadiationManager.RadiationScale;
 import mekanism.common.lib.radiation.capability.IRadiationEntity;
 import mekanism.common.registries.MekanismGases;
@@ -63,7 +66,7 @@ public abstract class ModuleMekaSuit extends Module {
             ItemStack chestStack = player.getItemStackFromSlot(EquipmentSlotType.CHEST);
             Optional<IGasHandler> capability = MekanismUtils.toOptional(chestStack.getCapability(Capabilities.GAS_HANDLER_CAPABILITY));
             if (Modules.load(chestStack, Modules.JETPACK_UNIT) != null && capability.isPresent()) {
-                hydrogenUsed = maxRate * 2 - capability.get().insertGas(hydrogenStack, Action.EXECUTE).getAmount();
+                hydrogenUsed = maxRate * 2 - capability.get().insertChemical(hydrogenStack, Action.EXECUTE).getAmount();
             }
             long oxygenUsed = Math.min(maxRate, player.getMaxAir() - player.getAir());
             long used = Math.max((int) Math.ceil(hydrogenUsed / 2D), oxygenUsed);
@@ -429,7 +432,9 @@ public abstract class ModuleMekaSuit extends Module {
                     Vec3d motionDiff = motionNeeded.subtract(player.getMotion());
                     item.setMotion(motionDiff.scale(0.2));
                     if (client) {
-                        Mekanism.proxy.renderBolt(Objects.hash(player, item), player.getPositionVec().add(0, 0.2, 0), item.getPositionVec(), (int) (diff.length() * 4));
+                        BoltEffect bolt = new BoltEffect(BoltRenderInfo.ELECTRICITY, player.getPositionVec().add(0, 0.2, 0), item.getPositionVec(), (int) (diff.length() * 4))
+                              .size(0.04F).lifespan(8).spawn(SpawnFunction.noise(8, 4));
+                        Mekanism.proxy.renderBolt(Objects.hash(player, item), bolt);
                     }
                 }
             }
