@@ -14,10 +14,7 @@ import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.math.BlockPos;
 
-import java.util.EnumSet;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 public class ParticleAcceleratorStructureValidator extends CuboidStructureValidator<ParticleAcceleratorMultiblockData> {
 
@@ -39,30 +36,37 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
     }
 
     @Override
-    protected boolean validateInner(BlockPos pos) {
-        // We don't care what's inside the ring, so long as it isn't another accelerator block.
-        return !BlockType.is(world.getBlockState(pos).getBlock(), ResearchBlockTypes.PARTICLE_ACCELERATOR_CASING);
-    }
-
-    @Override
     public FormationProtocol.FormationResult validate(FormationProtocol<ParticleAcceleratorMultiblockData> ctx) {
-        return super.validate(ctx);
-    }
+        BlockPos min = cuboid.getMinPos(), max = cuboid.getMaxPos();
+        int y = min.getY();
+        int minX = min.getX();
+        int minZ = min.getZ();
+        int maxX = max.getX();
+        int maxZ = max.getZ();
 
-    @Override
-    protected FormationProtocol.FormationResult validateFrame(FormationProtocol<ParticleAcceleratorMultiblockData> ctx, BlockPos pos, BlockState state, FormationProtocol.CasingType type, boolean needsFrame) {
-        return super.validateFrame(ctx, pos, state, type, needsFrame);
-    }
+        for (int x = min.getX(); x < max.getX(); x++) {
+            for (int z = min.getZ(); z < max.getZ(); z++) {
+                BlockPos pos = new BlockPos(x, y, z);
+                IMultiblockBase tile = structure.getTile(pos);
+                if (x > minX && z > minZ && x < maxX && z < maxZ) {
+                    // Don't care what kind of multiblock tile this is, if it's inside the ring, don't form.
+                    if (tile instanceof IMultiblock) {
+                        return FormationProtocol.FormationResult.FAIL;
+                    }
+                }
+                else {
+                    if (tile instanceof IMultiblock) {
+                        IMultiblock<ParticleAcceleratorMultiblockData> multiblockTile = (IMultiblock<ParticleAcceleratorMultiblockData>) tile;
+                        UUID uuid = multiblockTile.getCacheID();
+                        if (uuid != null && multiblockTile.getManager() == manager && multiblockTile.hasCache()) {
+                            manager.updateCache(multiblockTile);
 
-    @Override
-    protected FormationProtocol.FormationResult validateNode(FormationProtocol<ParticleAcceleratorMultiblockData> ctx, BlockPos pos) {
-        return super.validateNode(ctx, pos);
-    }
-
-    @Override
-    protected FormationProtocol.StructureRequirement getStructureRequirement(BlockPos pos) {
-        
-        return FormationProtocol.StructureRequirement.IGNORED;
+                        }
+                    }
+                }
+            }
+        }
+        return FormationProtocol.FormationResult.SUCCESS;
     }
 
     @Override
@@ -101,18 +105,7 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
 
     @Override
     public FormationProtocol.FormationResult postcheck(ParticleAcceleratorMultiblockData structureIn, Set<BlockPos> innerNodes) {
-        TreeMap<Integer, VoxelPlane> xMap = structure.getAxisMap(Structure.Axis.X);
-        TreeMap<Integer, VoxelPlane> zMap = structure.getAxisMap(Structure.Axis.Z);
-
-        for (Map.Entry<Integer, VoxelPlane>
-                entry : xMap.entrySet()) {
-            Mekanism.logger.info("Key: " + entry.getKey() + " Value: " + entry.getValue().toString());
-        }
-
-        for (Map.Entry<Integer, VoxelPlane>
-                entry : zMap.entrySet()) {
-            Mekanism.logger.info("Key: " + entry.getKey() + " Value: " + entry.getValue().toString());
-        }
+        Mekanism.logger.info("Successfully formed particle accelerator!");
         return super.postcheck(structureIn, innerNodes);
     }
 }
