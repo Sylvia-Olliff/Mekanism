@@ -12,13 +12,8 @@ import net.minecraft.item.ItemStack;
 
 public class RenderScubaTank extends MekanismItemStackRenderer {
 
-    private static ModelScubaTank scubaTank = new ModelScubaTank();
+    private static final ModelScubaTank scubaTank = new ModelScubaTank();
     public static ItemLayerWrapper model;
-
-    @Override
-    public void renderBlockSpecific(@Nonnull ItemStack stack, @Nonnull MatrixStack matrix, @Nonnull IRenderTypeBuffer renderer, int light, int overlayLight,
-          TransformType transformType) {
-    }
 
     @Override
     protected void renderItemSpecific(@Nonnull ItemStack stack, @Nonnull MatrixStack matrix, @Nonnull IRenderTypeBuffer renderer, int light, int overlayLight,

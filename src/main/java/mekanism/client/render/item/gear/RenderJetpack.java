@@ -12,13 +12,8 @@ import net.minecraft.item.ItemStack;
 
 public class RenderJetpack extends MekanismItemStackRenderer {
 
-    private static ModelJetpack jetpack = new ModelJetpack();
+    private static final ModelJetpack jetpack = new ModelJetpack();
     public static ItemLayerWrapper model;
-
-    @Override
-    public void renderBlockSpecific(@Nonnull ItemStack stack, @Nonnull MatrixStack matrix, @Nonnull IRenderTypeBuffer renderer, int light, int overlayLight,
-          TransformType transformType) {
-    }
 
     @Override
     protected void renderItemSpecific(@Nonnull ItemStack stack, @Nonnull MatrixStack matrix, @Nonnull IRenderTypeBuffer renderer, int light, int overlayLight,
