@@ -8,10 +8,13 @@ import mekanism.common.lib.math.voxel.VoxelCuboid;
 import mekanism.common.lib.math.voxel.VoxelCuboid.CuboidSide;
 import mekanism.common.lib.math.voxel.VoxelPlane;
 import mekanism.common.lib.multiblock.*;
+import mekanism.common.lib.multiblock.FormationProtocol.CasingType;
+import mekanism.common.lib.multiblock.FormationProtocol.FormationResult;
 import mekanism.research.common.MekanismResearch;
 import mekanism.research.common.registries.ResearchBlockTypes;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.math.BlockPos;
 
 import java.util.*;
@@ -24,19 +27,19 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
     public ParticleAcceleratorStructureValidator() { super(MIN_BOUNDS, MAX_BOUNDS); }
 
     @Override
-    protected FormationProtocol.CasingType getCasingType(BlockPos pos, BlockState state) {
+    protected CasingType getCasingType(BlockPos pos, BlockState state) {
         Block block = state.getBlock();
 
         //TODO: Add the Port/Valve block as valid casing
         if (BlockTypeTile.is(block, ResearchBlockTypes.PARTICLE_ACCELERATOR_CASING)) {
-            return FormationProtocol.CasingType.FRAME;
+            return CasingType.FRAME;
         } else {
-            return FormationProtocol.CasingType.INVALID;
+            return CasingType.INVALID;
         }
     }
 
     @Override
-    public FormationProtocol.FormationResult validate(FormationProtocol<ParticleAcceleratorMultiblockData> ctx) {
+    public FormationResult validate(FormationProtocol<ParticleAcceleratorMultiblockData> ctx) {
         BlockPos min = cuboid.getMinPos(), max = cuboid.getMaxPos();
         int y = min.getY();
         int minX = min.getX();
@@ -51,18 +54,29 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
                 if (x > minX && z > minZ && x < maxX && z < maxZ) {
                     // Don't care what kind of multiblock tile this is, if it's inside the ring, don't form.
                     if (tile instanceof IMultiblock) {
-                        return FormationProtocol.FormationResult.FAIL;
+                        return FormationResult.FAIL;
                     }
                 }
-                else {
+                else if (isFrameCompatible((TileEntity) tile)) {
                     if (tile instanceof IMultiblock) {
                         IMultiblock<ParticleAcceleratorMultiblockData> multiblockTile = (IMultiblock<ParticleAcceleratorMultiblockData>) tile;
                         UUID uuid = multiblockTile.getCacheID();
                         if (uuid != null && multiblockTile.getManager() == manager && multiblockTile.hasCache()) {
                             manager.updateCache(multiblockTile);
-
+                            ctx.idsFound.add(uuid);
                         }
                     }
+                    ctx.locations.add(pos);
+                    CasingType type = getCasingType(pos, world.getBlockState(pos));
+                    if (type == FormationProtocol.CasingType.VALVE) {
+                        IValveHandler.ValveData data = new IValveHandler.ValveData();
+                        data.location = pos;
+                        data.side = getSide(data.location);
+                        ctx.valves.add(data);
+                    }
+                }
+                else {
+                    return FormationResult.FAIL;
                 }
             }
         }
@@ -71,31 +85,32 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
 
     @Override
     public boolean precheck() {
-        // Only check the X and Z Axis as this structure has no top or bottom.
+
         VoxelCuboid ring = null;
-        TreeMap<Integer, VoxelPlane> xMap = structure.getAxisMap(Structure.Axis.X);
-        TreeMap<Integer, VoxelPlane> zMap = structure.getAxisMap(Structure.Axis.Z);
+        // Only check the Y axis as this should be a ring.
+        TreeMap<Integer, VoxelPlane> map = structure.getMajorAxisMap(Structure.Axis.Y);
 
-        Map.Entry<Integer, VoxelPlane> firstX = xMap.firstEntry(), lastX = xMap.lastEntry();
-
-        if (firstX == null || !firstX.getValue().equals(lastX.getValue()) || !firstX.getValue().isFull()) {
-            return false;
-        }
-
-        VoxelCuboid pass1 = VoxelCuboid.from(firstX.getValue(), lastX.getValue(), firstX.getKey(), lastX.getKey());
-
-        if (!pass1.greaterOrEqual(MIN_BOUNDS) && MAX_BOUNDS.greaterOrEqual(pass1))
+        if (map.isEmpty())
             return false;
 
-        Map.Entry<Integer, VoxelPlane> firstZ = zMap.firstEntry(), lastZ = zMap.lastEntry();
+        VoxelPlane yPlane = map.firstEntry().getValue();
+        int y = map.firstEntry().getKey();
 
-        if (firstZ == null || !firstZ.getValue().equals(lastZ.getValue()) || !firstZ.getValue().isFull()) {
+        // All valid formats are a multiple of 4
+        if ((yPlane.size() % 4) != 0)
             return false;
-        }
 
-        ring = VoxelCuboid.from(firstZ.getValue(), lastZ.getValue(), firstZ.getKey(), lastZ.getKey());
+        // If this plane is somehow full it's either too small or invalid
+        if (yPlane.isFull())
+            return false;
 
-        if (!pass1.equals(ring))
+        // If it's not a square don't bother
+        if (yPlane.height() != yPlane.length())
+            return false;
+
+        // Check bounds limits
+        ring = VoxelCuboid.from(yPlane, yPlane, yPlane.getMinRow(), yPlane.getMaxRow());
+        if (!ring.greaterOrEqual(MIN_BOUNDS) || MAX_BOUNDS.greaterOrEqual(ring))
             return false;
 
         cuboid = ring;
@@ -104,7 +119,7 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
     }
 
     @Override
-    public FormationProtocol.FormationResult postcheck(ParticleAcceleratorMultiblockData structureIn, Set<BlockPos> innerNodes) {
+    public FormationResult postcheck(ParticleAcceleratorMultiblockData structureIn, Set<BlockPos> innerNodes) {
         Mekanism.logger.info("Successfully formed particle accelerator!");
         return super.postcheck(structureIn, innerNodes);
     }
