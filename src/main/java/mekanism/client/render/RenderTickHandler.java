@@ -18,7 +18,7 @@ import mekanism.client.MekanismClient;
 import mekanism.client.gui.GuiUtils;
 import mekanism.client.gui.element.bar.GuiBar;
 import mekanism.client.render.MekanismRenderer.Model3D;
-import mekanism.client.render.effect.BoltRenderer;
+import mekanism.client.render.lib.effect.BoltRenderer;
 import mekanism.client.render.tileentity.IWireFrameRenderer;
 import mekanism.common.Mekanism;
 import mekanism.common.base.ProfilerConstants;
@@ -190,7 +190,7 @@ public class RenderTickHandler {
                         int x = minecraft.getMainWindow().getScaledWidth();
                         int y = minecraft.getMainWindow().getScaledHeight();
                         String text = scrollTextComponent.getFormattedText();
-                        int color = Color.rgba(1, 1, 1, modeSwitchTimer / 100F).argb();
+                        int color = Color.rgbad(1, 1, 1, modeSwitchTimer / 100F).argb();
                         font.drawString(text, x / 2 - font.getStringWidth(text) / 2, y - 60, color);
                     }
                 }

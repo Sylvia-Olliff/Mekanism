@@ -1,10 +1,10 @@
 package mekanism.client;
 
 import com.google.common.collect.Table.Cell;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Function;
 import mekanism.api.block.IColoredBlock;
 import mekanism.api.text.EnumColor;
 import mekanism.client.gui.GuiBoilerStats;
@@ -80,6 +80,7 @@ import mekanism.client.gui.robit.GuiRobitInventory;
 import mekanism.client.gui.robit.GuiRobitMain;
 import mekanism.client.gui.robit.GuiRobitRepair;
 import mekanism.client.gui.robit.GuiRobitSmelting;
+import mekanism.client.model.baked.DriveArrayBakedModel;
 import mekanism.client.particle.JetpackFlameParticle;
 import mekanism.client.particle.JetpackSmokeParticle;
 import mekanism.client.particle.LaserParticle;
@@ -89,13 +90,7 @@ import mekanism.client.render.MekanismRenderer;
 import mekanism.client.render.entity.RenderFlame;
 import mekanism.client.render.entity.RenderRobit;
 import mekanism.client.render.item.ItemLayerWrapper;
-import mekanism.client.render.item.gear.RenderArmoredJetpack;
-import mekanism.client.render.item.gear.RenderAtomicDisassembler;
 import mekanism.client.render.item.gear.RenderFlameThrower;
-import mekanism.client.render.item.gear.RenderFreeRunners;
-import mekanism.client.render.item.gear.RenderJetpack;
-import mekanism.client.render.item.gear.RenderScubaMask;
-import mekanism.client.render.item.gear.RenderScubaTank;
 import mekanism.client.render.layer.MekanismArmorLayer;
 import mekanism.client.render.tileentity.RenderBin;
 import mekanism.client.render.tileentity.RenderChemicalCrystallizer;
@@ -171,6 +166,8 @@ import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 @Mod.EventBusSubscriber(modid = Mekanism.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ClientRegistration {
 
+    private static final Map<ResourceLocation, CustomModelRegistryObject> customModels = new Object2ObjectOpenHashMap<>();
+
     @SubscribeEvent
     public static void init(FMLClientSetupEvent event) {
         //Register entity rendering handlers
@@ -242,6 +239,8 @@ public class ClientRegistration {
         for (FluidRegistryObject<?, ?, ?, ?> fluidRO : MekanismFluids.FLUIDS.getAllFluids()) {
             ClientRegistrationUtil.setRenderLayer(RenderType.getTranslucent(), fluidRO);
         }
+
+        customModels.put(MekanismBlocks.QIO_DRIVE_ARRAY.getRegistryName(), (orig, evt) -> new DriveArrayBakedModel(orig));
     }
 
     @SubscribeEvent
@@ -337,19 +336,12 @@ public class ClientRegistration {
     @SubscribeEvent
     public static void onModelBake(ModelBakeEvent event) {
         Map<ResourceLocation, IBakedModel> modelRegistry = event.getModelRegistry();
-        registerItemStackModel(modelRegistry, "jetpack", model -> RenderJetpack.model = model);
-        registerItemStackModel(modelRegistry, "jetpack_armored", model -> RenderArmoredJetpack.model = model);
-        registerItemStackModel(modelRegistry, "scuba_mask", model -> RenderScubaMask.model = model);
-        registerItemStackModel(modelRegistry, "scuba_tank", model -> RenderScubaTank.model = model);
-        registerItemStackModel(modelRegistry, "free_runners", model -> RenderFreeRunners.model = model);
-        registerItemStackModel(modelRegistry, "atomic_disassembler", model -> RenderAtomicDisassembler.model = model);
-        registerItemStackModel(modelRegistry, "flamethrower", model -> RenderFlameThrower.model = model);
-    }
-
-    @Deprecated
-    private static void registerItemStackModel(Map<ResourceLocation, IBakedModel> modelRegistry, String type, Function<ItemLayerWrapper, IBakedModel> setModel) {
-        ModelResourceLocation resourceLocation = ClientRegistrationUtil.getInventoryMRL(Mekanism::rl, type);
-        modelRegistry.put(resourceLocation, setModel.apply(new ItemLayerWrapper(modelRegistry.get(resourceLocation))));
+        ModelResourceLocation resourceLocation = new ModelResourceLocation(Mekanism.rl("flamethrower"), "inventory");
+        modelRegistry.put(resourceLocation, RenderFlameThrower.model = new ItemLayerWrapper(modelRegistry.get(resourceLocation)));
+        modelRegistry.replaceAll((rl, model) -> {
+            CustomModelRegistryObject obj = customModels.get(new ResourceLocation(rl.getNamespace(), rl.getPath()));
+            return obj == null ? model : obj.createModel(model, event);
+        });
     }
 
     @SubscribeEvent
@@ -415,7 +407,8 @@ public class ClientRegistration {
         }
         for (Map.Entry<PrimaryResource, BlockRegistryObject<?, ?>> entry : MekanismBlocks.PROCESSED_RESOURCE_BLOCKS.entrySet()) {
             int tint = entry.getKey().getTint();
-            ClientRegistrationUtil.registerBlockColorHandler(blockColors, itemColors, (state, world, pos, index) -> tint, (stack, index) -> tint, entry.getValue());
+            ClientRegistrationUtil.registerBlockColorHandler(blockColors, itemColors, (state, world, pos, index) -> index == 1 ? tint : -1,
+                  (stack, index) -> index == 1 ? tint : -1, entry.getValue());
         }
     }
 
@@ -445,5 +438,11 @@ public class ClientRegistration {
                 break;
             }
         }
+    }
+
+    @FunctionalInterface
+    private interface CustomModelRegistryObject {
+
+        IBakedModel createModel(IBakedModel original, ModelBakeEvent event);
     }
 }

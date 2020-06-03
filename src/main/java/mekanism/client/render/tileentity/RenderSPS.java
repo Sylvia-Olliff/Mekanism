@@ -4,8 +4,8 @@ import java.util.Random;
 import javax.annotation.ParametersAreNonnullByDefault;
 import com.google.common.base.Objects;
 import com.mojang.blaze3d.matrix.MatrixStack;
-import mekanism.client.render.effect.BillboardingEffectRenderer;
-import mekanism.client.render.effect.BoltRenderer;
+import mekanism.client.render.lib.effect.BillboardingEffectRenderer;
+import mekanism.client.render.lib.effect.BoltRenderer;
 import mekanism.common.base.ProfilerConstants;
 import mekanism.common.content.sps.SPSMultiblockData;
 import mekanism.common.content.sps.SPSMultiblockData.CoilData;
@@ -39,7 +39,7 @@ public class RenderSPS extends MekanismTileEntityRenderer<TileEntitySPSCasing> {
 
     public RenderSPS(TileEntityRendererDispatcher renderer) {
         super(renderer);
-        CORE.setColor(Color.rgba(255, 255, 255, 240));
+        CORE.setColor(Color.rgbai(255, 255, 255, 240));
     }
 
     @Override
