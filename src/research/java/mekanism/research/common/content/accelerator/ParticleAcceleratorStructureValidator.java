@@ -57,7 +57,7 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
                         return FormationResult.FAIL;
                     }
                 }
-                else if (isFrameCompatible((TileEntity) tile)) {
+                else if (MekanismResearch.particleAcceleratorManager.isCompatible((TileEntity) tile)) {
                     if (tile instanceof IMultiblock) {
                         IMultiblock<ParticleAcceleratorMultiblockData> multiblockTile = (IMultiblock<ParticleAcceleratorMultiblockData>) tile;
                         UUID uuid = multiblockTile.getCacheID();
