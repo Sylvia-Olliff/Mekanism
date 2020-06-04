@@ -91,6 +91,8 @@ public class RenderTickHandler {
 
     private static final double HUD_SCALE = 0.6;
 
+    private static HUDRenderer hudRenderer = new HUDRenderer();
+
     public static int modeSwitchTimer = 0;
     public Minecraft minecraft = Minecraft.getInstance();
     public static double prevRadiation = 0;
@@ -119,7 +121,7 @@ public class RenderTickHandler {
     }
 
     @SubscribeEvent
-    public void renderOverlay(RenderGameOverlayEvent.Pre event) {
+    public void renderOverlay(RenderGameOverlayEvent.Post event) {
         if (event.getType() == ElementType.ARMOR) {
             FloatingLong capacity = FloatingLong.ZERO, stored = FloatingLong.ZERO;
             for (ItemStack stack : minecraft.player.inventory.armorInventory) {
@@ -170,6 +172,8 @@ public class RenderTickHandler {
                     start -= 2;
                 }
                 RenderSystem.popMatrix();
+
+                hudRenderer.renderHUD(event.getPartialTicks());
             }
         }
     }
