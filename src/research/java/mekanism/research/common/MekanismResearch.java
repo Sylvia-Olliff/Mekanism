@@ -5,6 +5,7 @@ import mekanism.common.base.IModule;
 import mekanism.common.config.MekanismModConfig;
 import mekanism.common.lib.Version;
 import mekanism.common.lib.multiblock.MultiblockManager;
+import mekanism.research.common.base.PlayerStateResearch;
 import mekanism.research.common.config.MekanismResearchConfig;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorCache;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorMultiblockData;
@@ -13,6 +14,7 @@ import mekanism.research.common.registries.ResearchBlocks;
 import mekanism.research.common.registries.ResearchTileEntityTypes;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -24,6 +26,7 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 public class MekanismResearch implements IModule {
 
     public static final String MODID = "mekanismresearch";
+    public static final PlayerStateResearch playerStateResearch = new PlayerStateResearch();
 
     public static MekanismResearch instance;
 
@@ -37,13 +40,16 @@ public class MekanismResearch implements IModule {
     public MekanismResearch() {
         Mekanism.modulesLoaded.add(instance = this);
         MekanismResearchConfig.registerConfigs(ModLoadingContext.get());
+
         IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::onConfigLoad);
 
+        MinecraftForge.EVENT_BUS.addListener(this::onWorldLoad);
+
         ResearchBlocks.BLOCKS.register(modEventBus);
         ResearchTileEntityTypes.TILE_ENTITY_TYPES.register(modEventBus);
-
 
         //Set our version number to match the mods.toml file, which matches the one in our build.gradle
         versionNumber = new Version(ModLoadingContext.get().getActiveContainer().getModInfo().getVersion());
@@ -84,5 +90,9 @@ public class MekanismResearch implements IModule {
         if (config.getModId().equals(MODID) && config instanceof MekanismModConfig) {
             ((MekanismModConfig) config).clearCache();
         }
+    }
+
+    private void onWorldLoad(WorldEvent.Load event) {
+        playerStateResearch.init(event.getWorld());
     }
 }
