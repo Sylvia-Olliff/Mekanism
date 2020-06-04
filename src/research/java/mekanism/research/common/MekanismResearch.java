@@ -5,6 +5,7 @@ import mekanism.common.base.IModule;
 import mekanism.common.config.MekanismModConfig;
 import mekanism.common.lib.Version;
 import mekanism.common.lib.multiblock.MultiblockManager;
+import mekanism.research.client.ResearchClient;
 import mekanism.research.common.base.PlayerStateResearch;
 import mekanism.research.common.config.MekanismResearchConfig;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorCache;
@@ -78,9 +79,10 @@ public class MekanismResearch implements IModule {
     }
 
     @Override
-    public void resetClient() {
+    public void resetClient() { ResearchClient.reset(); }
 
-    }
+    @Override
+    public void launchClient() { ResearchClient.launch(); }
 
     private void onConfigLoad(ModConfig.ModConfigEvent configEvent) {
         //Note: We listen to both the initial load and the reload, so as to make sure that we fix any accidentally
