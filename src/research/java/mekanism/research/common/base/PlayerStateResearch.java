@@ -1,10 +1,8 @@
 package mekanism.research.common.base;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import mekanism.api.math.FloatingLong;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.IWorld;
-
-import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
 
@@ -26,32 +24,21 @@ public class PlayerStateResearch {
 
     // ----------------------
     //
-    // Particle Accelerator state tracking
+    // Research Player state tracking
     //
     // ----------------------
 
-    public void setAcceleratorState(UUID uuid, int acceleratorId, boolean isActive, boolean isLocal) {
-        boolean changed;
+    public void setResearchPlayerState(UUID uuid, FloatingLong currentPoints, boolean isLocal) {
 
         if (!researchTrackers.containsKey(uuid))
-        {
-            researchTrackers.put(uuid, new ResearchTracker(uuid, acceleratorId));
-            changed = true;
-        }
+            researchTrackers.put(uuid, new ResearchTracker(uuid, currentPoints));
         else
-        {
-            changed = isActive != researchTrackers.get(uuid).isAcceleratorActive(acceleratorId);
-            researchTrackers.get(uuid).setAccelerator(acceleratorId);
-        }
+            researchTrackers.get(uuid).setResearchPoints(currentPoints);
 
-        // If something changed and we're in a remote world, take appropriate action
-        if (changed && world.isRemote()) {
+        if (world.isRemote() && isLocal) {
             // If the player is the "local" player, we need to tell the server the state has changed
-            if (isLocal) {
-                //TODO: Send an appropriate packet update to the server
-            }
 
-            //TODO: check config settings and play active accelerator sounds
+            //TODO: Send an appropriate packet update to the server
         }
     }
 
@@ -59,5 +46,10 @@ public class PlayerStateResearch {
 
     public ResearchTracker getPlayerResearch(PlayerEntity p) { return researchTrackers.get(p.getUniqueID()); }
 
-    public boolean isAcceleratorActive(PlayerEntity p, int acceleratorId) { return (researchTrackers.containsKey(p.getUniqueID()) && researchTrackers.get(p.getUniqueID()).isAcceleratorActive(acceleratorId)); }
+    public ResearchTracker getPlayerResearch(UUID uuid) {
+        if (!researchTrackers.containsKey(uuid))
+            researchTrackers.put(uuid, new ResearchTracker(uuid, FloatingLong.ZERO));
+
+        return researchTrackers.get(uuid);
+    }
 }

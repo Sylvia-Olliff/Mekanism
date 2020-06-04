@@ -1,8 +1,11 @@
 package mekanism.research.common.config;
 
+import com.sun.javaws.exceptions.InvalidArgumentException;
 import mekanism.api.math.FloatingLong;
 import mekanism.common.config.BaseMekanismConfig;
 import mekanism.common.config.value.CachedFloatingLongValue;
+import mekanism.research.common.base.ResearchTracker;
+import mekanism.research.common.tier.AcceleratorTier;
 import net.minecraftforge.common.ForgeConfigSpec;
 import net.minecraftforge.fml.config.ModConfig;
 
@@ -49,6 +52,10 @@ public class ResearchConfig extends BaseMekanismConfig {
         builder.pop();
         configSpec = builder.build();
 
+        AcceleratorTier.BASIC.setConfigReference(accelBasicPowerPerBlock, accelBasicParticleProduction);
+        AcceleratorTier.ADVANCED.setConfigReference(accelAdvPowerPerBlock, accelAdvParticleProduction);
+        AcceleratorTier.ELITE.setConfigReference(accelElitePowerPerBlock, accelEliteParticleProduction);
+        AcceleratorTier.ULTIMATE.setConfigReference(accelUltimatePowerPerBlock, accelUltimateParticleProduction);
     }
 
     @Override

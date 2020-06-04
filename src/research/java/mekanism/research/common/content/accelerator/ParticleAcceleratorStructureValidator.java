@@ -109,7 +109,7 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
             return false;
 
         // Check bounds limits
-        ring = VoxelCuboid.from(yPlane, yPlane, yPlane.getMinRow(), yPlane.getMaxRow());
+        ring = VoxelCuboid.from(yPlane, yPlane, yPlane.getMinRow(), yPlane.getMaxRow() + yPlane.getMaxCol());
         if (!ring.greaterOrEqual(MIN_BOUNDS) || MAX_BOUNDS.greaterOrEqual(ring))
             return false;
 

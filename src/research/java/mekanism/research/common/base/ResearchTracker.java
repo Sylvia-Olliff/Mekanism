@@ -1,63 +1,54 @@
 package mekanism.research.common.base;
 
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import com.sun.javaws.exceptions.InvalidArgumentException;
+import mekanism.api.math.FloatingLong;
 
-import java.util.Set;
-import java.util.TreeMap;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 public class ResearchTracker {
 
-    private static final long MAX_RESEARCH_POINTS = 500_000_000L;
+    //TODO: Add NBT saving for player research data.
+    //TODO: Add tracking of unlocked research.
+    private static final FloatingLong MAX_RESEARCH_POINTS = FloatingLong.createConst(500_000_000L);
 
     private final UUID playerId;
-    private final Set<Integer> accelerators = new ObjectOpenHashSet<>();
+    private final Object lockObj = new Object();
 
-    private long researchPoints;
+    private FloatingLong researchPoints;
 
     public ResearchTracker(UUID uuid) {
-        playerId = uuid;
-        researchPoints = 0L;
+        this.playerId = uuid;
+        this.researchPoints = FloatingLong.ZERO;
     }
 
-    public ResearchTracker(UUID uuid, int acceleratorId) {
-        playerId = uuid;
-        researchPoints = 0L;
-        accelerators.add(acceleratorId);
+    public ResearchTracker(UUID uuid, FloatingLong points) {
+        this.playerId = uuid;
+        this.researchPoints = points;
     }
 
-    public void clear() {
-        // instance will only ever be for a single player so don't clear that value
-        researchPoints = 0L;
-        accelerators.clear();
-    }
-
-    public boolean isAcceleratorActive(int acceleratorId) { return accelerators.contains(acceleratorId); }
-
-    public void setAccelerator(int acceleratorId) {
-        if (accelerators.contains(acceleratorId))
-            accelerators.remove(acceleratorId);
-        else
-            accelerators.add(acceleratorId);
-    }
+    public FloatingLong getResearchPoints() { return researchPoints; }
 
     public UUID getPlayerId() { return playerId; }
 
-    public long getResearchPoints() { return researchPoints; }
+    public void setResearchPoints(FloatingLong points) { this.researchPoints = points; }
 
-    public boolean hasEnoughPoints(long cost) { return cost <= researchPoints; }
+    public void addPoints(FloatingLong points) {
+        synchronized (lockObj) {
+            if (researchPoints.greaterOrEqual(MAX_RESEARCH_POINTS))
+                return;
 
-    public void spendPoints(long cost) { researchPoints -= cost; }
+            if (researchPoints.longValue() + points.longValue() >= MAX_RESEARCH_POINTS.longValue())
+                researchPoints = MAX_RESEARCH_POINTS;
+            else
+                researchPoints.add(points);
+        }
+    }
 
-    public void genPoints(long points) {
+    public boolean canResearch(FloatingLong pointCost) { return pointCost.smallerOrEqual(researchPoints); }
 
-        if (researchPoints >= MAX_RESEARCH_POINTS)
-            return;
-
-        if ((researchPoints + points) >= MAX_RESEARCH_POINTS)
-            researchPoints = MAX_RESEARCH_POINTS;
-        else
-            researchPoints += points;
+    public void spendPoints(FloatingLong pointCost) {
+        synchronized (lockObj) {
+            researchPoints.subtract(pointCost);
+        }
     }
 }

@@ -11,6 +11,7 @@ import mekanism.research.common.config.MekanismResearchConfig;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorCache;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorMultiblockData;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorStructureValidator;
+import mekanism.research.common.network.ResearchPacketHandler;
 import mekanism.research.common.registries.ResearchBlocks;
 import mekanism.research.common.registries.ResearchTileEntityTypes;
 import net.minecraft.util.ResourceLocation;
@@ -30,6 +31,8 @@ public class MekanismResearch implements IModule {
     public static final PlayerStateResearch playerStateResearch = new PlayerStateResearch();
 
     public static MekanismResearch instance;
+
+    public static ResearchPacketHandler packetHandler = new ResearchPacketHandler();
 
     /**
      * MekanismResearch version number
