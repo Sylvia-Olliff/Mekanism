@@ -43,7 +43,6 @@ public class TileEntityNutritionalLiquifier extends TileEntityProgressMachine<It
 
     public static final int MAX_GAS = 10_000;
     public BasicGasTank gasTank;
-    public int gasOutput = 256;
 
     private final IOutputHandler<@NonNull GasStack> outputHandler;
     private final IInputHandler<@NonNull ItemStack> inputHandler;
@@ -135,9 +134,9 @@ public class TileEntityNutritionalLiquifier extends TileEntityProgressMachine<It
     @Override
     protected IInventorySlotHolder getInitialInventory() {
         InventorySlotHelper builder = InventorySlotHelper.forSideWithConfig(this::getDirection, this::getConfig);
-        builder.addSlot(inputSlot = InputInventorySlot.at(item -> item.getItem().isFood(), this, 26, 36), RelativeSide.LEFT);
-        builder.addSlot(outputSlot = GasInventorySlot.drain(gasTank, this, 155, 25), RelativeSide.RIGHT);
-        builder.addSlot(energySlot = EnergyInventorySlot.fillOrConvert(energyContainer, this::getWorld, this, 155, 5), RelativeSide.BOTTOM, RelativeSide.TOP);
+        builder.addSlot(inputSlot = InputInventorySlot.at(item -> item.getItem().isFood(), this, 26, 36));
+        builder.addSlot(outputSlot = GasInventorySlot.drain(gasTank, this, 155, 25));
+        builder.addSlot(energySlot = EnergyInventorySlot.fillOrConvert(energyContainer, this::getWorld, this, 155, 5));
         outputSlot.setSlotOverlay(SlotOverlay.PLUS);
         return builder.build();
     }

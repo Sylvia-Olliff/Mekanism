@@ -25,6 +25,10 @@ public class BasicSlurryTank extends BasicChemicalTank<Slurry, SlurryStack> impl
         return create(capacity, alwaysTrue, listener);
     }
 
+    public static BasicSlurryTank createDummy(long capacity) {
+        return create(capacity, alwaysTrueBi, alwaysTrueBi, alwaysTrue, null);
+    }
+
     public static BasicSlurryTank create(long capacity, Predicate<@NonNull Slurry> validator, @Nullable IContentsListener listener) {
         if (capacity < 0) {
             throw new IllegalArgumentException("Capacity must be at least zero");
@@ -43,6 +47,13 @@ public class BasicSlurryTank extends BasicChemicalTank<Slurry, SlurryStack> impl
         }
         Objects.requireNonNull(validator, "Slurry validity check cannot be null");
         return new BasicSlurryTank(capacity, notExternal, alwaysTrueBi, validator, listener);
+    }
+
+    public static BasicSlurryTank output(long capacity, @Nullable IContentsListener listener) {
+        if (capacity < 0) {
+            throw new IllegalArgumentException("Capacity must be at least zero");
+        }
+        return new BasicSlurryTank(capacity, alwaysTrueBi, internalOnly, alwaysTrue, listener);
     }
 
     public static BasicSlurryTank create(long capacity, Predicate<@NonNull Slurry> canExtract, Predicate<@NonNull Slurry> canInsert,

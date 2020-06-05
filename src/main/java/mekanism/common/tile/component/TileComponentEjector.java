@@ -10,11 +10,15 @@ import java.util.Set;
 import mekanism.api.Action;
 import mekanism.api.NBTConstants;
 import mekanism.api.RelativeSide;
+import mekanism.api.chemical.Chemical;
+import mekanism.api.chemical.ChemicalStack;
+import mekanism.api.chemical.IChemicalHandler;
 import mekanism.api.inventory.AutomationType;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.api.text.EnumColor;
 import mekanism.api.transmitters.TransmissionType;
 import mekanism.common.capabilities.Capabilities;
+import mekanism.common.config.MekanismConfig;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.container.MekanismContainer.ISpecificContainerTracker;
 import mekanism.common.inventory.container.sync.ISyncableData;
@@ -26,15 +30,19 @@ import mekanism.common.lib.inventory.TransitRequest.TransitResponse;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.component.config.ConfigInfo;
 import mekanism.common.tile.component.config.DataType;
+import mekanism.common.tile.component.config.slot.ChemicalSlotInfo;
+import mekanism.common.tile.component.config.slot.ChemicalSlotInfo.GasSlotInfo;
+import mekanism.common.tile.component.config.slot.ChemicalSlotInfo.InfusionSlotInfo;
+import mekanism.common.tile.component.config.slot.ChemicalSlotInfo.PigmentSlotInfo;
+import mekanism.common.tile.component.config.slot.ChemicalSlotInfo.SlurrySlotInfo;
 import mekanism.common.tile.component.config.slot.FluidSlotInfo;
-import mekanism.common.tile.component.config.slot.GasSlotInfo;
 import mekanism.common.tile.component.config.slot.ISlotInfo;
 import mekanism.common.tile.component.config.slot.InventorySlotInfo;
 import mekanism.common.tile.interfaces.ILogisticalTransporter;
 import mekanism.common.util.CapabilityUtils;
+import mekanism.common.util.ChemicalUtil;
 import mekanism.common.util.EnumUtils;
 import mekanism.common.util.FluidUtils;
-import mekanism.common.util.GasUtils;
 import mekanism.common.util.MekanismUtils;
 import mekanism.common.util.NBTUtils;
 import mekanism.common.util.TransporterUtils;
@@ -42,19 +50,17 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.tileentity.TileEntity;
 import net.minecraft.util.Direction;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.Constants.NBT;
 
 public class TileComponentEjector implements ITileComponent, ISpecificContainerTracker {
 
-    //TODO: Figure out why these limits for output rates are here/if there should be an upgrade that modifies the output rates
-    private static final long GAS_OUTPUT = 256;
-    private static final int FLUID_OUTPUT = 256;
     private final TileEntityMekanism tile;
+    private final Map<TransmissionType, ConfigInfo> configInfo = new EnumMap<>(TransmissionType.class);
+    private final EnumColor[] inputColors = new EnumColor[]{null, null, null, null, null, null};
     private boolean strictInput;
     private EnumColor outputColor;
-    private EnumColor[] inputColors = new EnumColor[]{null, null, null, null, null, null};
     private int tickDelay = 0;
-    private Map<TransmissionType, ConfigInfo> configInfo = new EnumMap<>(TransmissionType.class);
 
     public TileComponentEjector(TileEntityMekanism tile) {
         this.tile = tile;
@@ -79,8 +85,10 @@ public class TileComponentEjector implements ITileComponent, ISpecificContainerT
             } else {
                 tickDelay--;
             }
-
             eject(TransmissionType.GAS);
+            eject(TransmissionType.INFUSION);
+            eject(TransmissionType.SLURRY);
+            eject(TransmissionType.PIGMENT);
             eject(TransmissionType.FLUID);
         }
     }
@@ -94,14 +102,25 @@ public class TileComponentEjector implements ITileComponent, ISpecificContainerT
                     if (slotInfo != null) {
                         Set<Direction> outputSides = info.getSidesForData(dataType);
                         if (type == TransmissionType.GAS && slotInfo instanceof GasSlotInfo) {
-                            ((GasSlotInfo) slotInfo).getTanks().forEach(tank -> GasUtils.emit(outputSides, tank, tile, GAS_OUTPUT));
+                            eject(Capabilities.GAS_HANDLER_CAPABILITY, (GasSlotInfo) slotInfo, outputSides);
+                        } else if (type == TransmissionType.INFUSION && slotInfo instanceof InfusionSlotInfo) {
+                            eject(Capabilities.INFUSION_HANDLER_CAPABILITY, (InfusionSlotInfo) slotInfo, outputSides);
+                        } else if (type == TransmissionType.PIGMENT && slotInfo instanceof PigmentSlotInfo) {
+                            eject(Capabilities.PIGMENT_HANDLER_CAPABILITY, (PigmentSlotInfo) slotInfo, outputSides);
+                        } else if (type == TransmissionType.SLURRY && slotInfo instanceof SlurrySlotInfo) {
+                            eject(Capabilities.SLURRY_HANDLER_CAPABILITY, (SlurrySlotInfo) slotInfo, outputSides);
                         } else if (type == TransmissionType.FLUID && slotInfo instanceof FluidSlotInfo) {
-                            ((FluidSlotInfo) slotInfo).getTanks().forEach(tank -> FluidUtils.emit(outputSides, tank, tile, FLUID_OUTPUT));
+                            ((FluidSlotInfo) slotInfo).getTanks().forEach(tank -> FluidUtils.emit(outputSides, tank, tile, MekanismConfig.general.fluidAutoEjectRate.get()));
                         }
                     }
                 }
             }
         }
+    }
+
+    private <CHEMICAL extends Chemical<CHEMICAL>, STACK extends ChemicalStack<CHEMICAL>, HANDLER extends IChemicalHandler<CHEMICAL, STACK>> void eject(
+          Capability<HANDLER> capability, ChemicalSlotInfo<CHEMICAL, STACK, ?> slotInfo, Set<Direction> outputSides) {
+        slotInfo.getTanks().forEach(tank -> ChemicalUtil.emit(capability, outputSides, tank, tile, MekanismConfig.general.chemicalAutoEjectRate.get()));
     }
 
     private void outputItems() {

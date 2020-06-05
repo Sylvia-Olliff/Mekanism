@@ -1,6 +1,6 @@
 package mekanism.common.inventory.slot.chemical;
 
-import com.mojang.datafixers.util.Pair;
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.Nullable;
@@ -14,7 +14,9 @@ import mekanism.api.chemical.slurry.ISlurryHandler;
 import mekanism.api.chemical.slurry.ISlurryTank;
 import mekanism.api.chemical.slurry.Slurry;
 import mekanism.api.chemical.slurry.SlurryStack;
+import mekanism.api.recipes.chemical.ItemStackToChemicalRecipe;
 import mekanism.common.capabilities.Capabilities;
+import mekanism.common.recipe.MekanismRecipeType;
 import net.minecraft.item.ItemStack;
 import net.minecraft.world.World;
 
@@ -28,7 +30,24 @@ public class SlurryInventorySlot extends ChemicalInventorySlot<Slurry, SlurrySta
         return getCapability(stack, Capabilities.SLURRY_HANDLER_CAPABILITY);
     }
 
+    /**
+     * Accepts any items that can be filled with the current contents of the slurry tank, or if it is a slurry tank container and the tank is currently empty
+     *
+     * Drains the tank into this item.
+     */
+    public static SlurryInventorySlot drain(ISlurryTank slurryTank, @Nullable IContentsListener listener, int x, int y) {
+        Objects.requireNonNull(slurryTank, "Slurry tank cannot be null");
+        Predicate<@NonNull ItemStack> insertPredicate = getDrainInsertPredicate(slurryTank, SlurryInventorySlot::getCapability);
+        return new SlurryInventorySlot(slurryTank, insertPredicate.negate(), insertPredicate, stack -> stack.getCapability(Capabilities.SLURRY_HANDLER_CAPABILITY).isPresent(),
+              listener, x, y);
+    }
+
     //TODO: Implement creators as needed
+    private SlurryInventorySlot(ISlurryTank slurryTank, Predicate<@NonNull ItemStack> canExtract, Predicate<@NonNull ItemStack> canInsert,
+          Predicate<@NonNull ItemStack> validator, @Nullable IContentsListener listener, int x, int y) {
+        this(slurryTank, () -> null, canExtract, canInsert, validator, listener, x, y);
+    }
+
     private SlurryInventorySlot(ISlurryTank slurryTank, Supplier<World> worldSupplier, Predicate<@NonNull ItemStack> canExtract,
           Predicate<@NonNull ItemStack> canInsert, Predicate<@NonNull ItemStack> validator, @Nullable IContentsListener listener, int x, int y) {
         super(slurryTank, worldSupplier, canExtract, canInsert, validator, listener, x, y);
@@ -42,7 +61,7 @@ public class SlurryInventorySlot extends ChemicalInventorySlot<Slurry, SlurrySta
 
     @Nullable
     @Override
-    protected Pair<ItemStack, SlurryStack> getConversion() {
+    protected MekanismRecipeType<? extends ItemStackToChemicalRecipe<Slurry, SlurryStack>> getConversionRecipeType() {
         return null;
     }
 }

@@ -18,6 +18,7 @@ import mekanism.api.text.ILangEntry;
 import mekanism.api.transmitters.TransmissionType;
 import mekanism.common.MekanismLang;
 import mekanism.common.block.attribute.Attribute;
+import mekanism.common.capabilities.Capabilities;
 import mekanism.common.capabilities.chemical.GasTankGasTank;
 import mekanism.common.capabilities.holder.chemical.ChemicalTankHelper;
 import mekanism.common.capabilities.holder.chemical.IChemicalTankHolder;
@@ -28,7 +29,7 @@ import mekanism.common.inventory.container.slot.ContainerSlotType;
 import mekanism.common.inventory.container.slot.SlotOverlay;
 import mekanism.common.inventory.container.sync.SyncableEnum;
 import mekanism.common.inventory.slot.chemical.GasInventorySlot;
-import mekanism.common.tier.GasTankTier;
+import mekanism.common.tier.ChemicalTankTier;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.component.ITileComponent;
 import mekanism.common.tile.component.TileComponentConfig;
@@ -38,7 +39,7 @@ import mekanism.common.tile.interfaces.IHasGasMode;
 import mekanism.common.tile.interfaces.ISideConfiguration;
 import mekanism.common.upgrade.GasTankUpgradeData;
 import mekanism.common.upgrade.IUpgradeData;
-import mekanism.common.util.GasUtils;
+import mekanism.common.util.ChemicalUtil;
 import mekanism.common.util.ItemDataUtils;
 import mekanism.common.util.MekanismUtils;
 import mekanism.common.util.NBTUtils;
@@ -47,6 +48,7 @@ import net.minecraft.nbt.CompoundNBT;
 import net.minecraft.util.Direction;
 import net.minecraft.util.text.ITextComponent;
 
+//TODO - V10: Convert to ChemicalTank
 public class TileEntityGasTank extends TileEntityMekanism implements ISideConfiguration, ISustainedData, IHasGasMode {
 
     /**
@@ -54,12 +56,8 @@ public class TileEntityGasTank extends TileEntityMekanism implements ISideConfig
      */
     public GasTankGasTank gasTank;
 
-    public GasTankTier tier;
-
-    public GasMode dumping;
-
-    public long currentGasAmount;
-
+    public ChemicalTankTier tier;
+    public GasMode dumping = GasMode.IDLE;
     public TileComponentEjector ejectorComponent;
     public TileComponentConfig configComponent;
 
@@ -69,19 +67,14 @@ public class TileEntityGasTank extends TileEntityMekanism implements ISideConfig
     public TileEntityGasTank(IBlockProvider blockProvider) {
         super(blockProvider);
         configComponent = new TileComponentConfig(this, TransmissionType.GAS, TransmissionType.ITEM);
-        configComponent.setupIOConfig(TransmissionType.ITEM, drainSlot, fillSlot, RelativeSide.FRONT, true)
-              .setCanEject(false);
-        configComponent.setupIOConfig(TransmissionType.GAS, gasTank, gasTank, RelativeSide.FRONT)
-              .setEjecting(true);
-
-        dumping = GasMode.IDLE;
-
+        configComponent.setupIOConfig(TransmissionType.ITEM, drainSlot, fillSlot, RelativeSide.FRONT, true).setCanEject(false);
+        configComponent.setupIOConfig(TransmissionType.GAS, gasTank, gasTank, RelativeSide.FRONT).setEjecting(true);
         ejectorComponent = new TileComponentEjector(this);
     }
 
     @Override
     protected void presetVariables() {
-        tier = Attribute.getTier(getBlockType(), GasTankTier.class);
+        tier = Attribute.getTier(getBlockType(), ChemicalTankTier.class);
     }
 
     @Nonnull
@@ -110,14 +103,14 @@ public class TileEntityGasTank extends TileEntityMekanism implements ISideConfig
         super.onUpdateServer();
         drainSlot.drainTank();
         fillSlot.fillTank();
-        if (!gasTank.isEmpty() && MekanismUtils.canFunction(this) && (tier == GasTankTier.CREATIVE || dumping != GasMode.DUMPING)) {
+        if (!gasTank.isEmpty() && MekanismUtils.canFunction(this) && (tier == ChemicalTankTier.CREATIVE || dumping != GasMode.DUMPING)) {
             ConfigInfo config = configComponent.getConfig(TransmissionType.GAS);
             if (config != null && config.isEjecting()) {
-                GasUtils.emit(config.getAllOutputtingSides(), gasTank, this, tier.getOutput());
+                ChemicalUtil.emit(Capabilities.GAS_HANDLER_CAPABILITY, config.getAllOutputtingSides(), gasTank, this, tier.getOutput());
             }
         }
 
-        if (tier != GasTankTier.CREATIVE) {
+        if (tier != ChemicalTankTier.CREATIVE) {
             if (dumping == GasMode.DUMPING) {
                 gasTank.shrinkStack(tier.getStorage() / 400, Action.EXECUTE);
             } else if (dumping == GasMode.DUMPING_EXCESS) {
@@ -127,12 +120,6 @@ public class TileEntityGasTank extends TileEntityMekanism implements ISideConfig
                 }
             }
         }
-
-        long newGasAmount = gasTank.getStored();
-        if (newGasAmount != currentGasAmount) {
-            markDirty(false);
-        }
-        currentGasAmount = newGasAmount;
     }
 
     @Override
