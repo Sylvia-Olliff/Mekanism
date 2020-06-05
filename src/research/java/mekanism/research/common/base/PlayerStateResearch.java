@@ -31,7 +31,7 @@ public class PlayerStateResearch {
     public void setResearchPlayerState(UUID uuid, FloatingLong currentPoints, boolean isLocal) {
 
         if (!researchTrackers.containsKey(uuid))
-            researchTrackers.put(uuid, new ResearchTracker(uuid, currentPoints));
+            researchTrackers.put(uuid, new ResearchTracker(uuid, this.world, currentPoints));
         else
             researchTrackers.get(uuid).setResearchPoints(currentPoints);
 
@@ -44,11 +44,16 @@ public class PlayerStateResearch {
 
     public TreeMap<UUID, ResearchTracker> getResearchTrackers() { return researchTrackers; }
 
-    public ResearchTracker getPlayerResearch(PlayerEntity p) { return researchTrackers.get(p.getUniqueID()); }
+    public ResearchTracker getPlayerResearch(PlayerEntity p) {
+        if (!researchTrackers.containsKey(p.getUniqueID()))
+            researchTrackers.put(p.getUniqueID(), new ResearchTracker(p.getUniqueID(), this.world, FloatingLong.ZERO));
+
+        return researchTrackers.get(p.getUniqueID());
+    }
 
     public ResearchTracker getPlayerResearch(UUID uuid) {
         if (!researchTrackers.containsKey(uuid))
-            researchTrackers.put(uuid, new ResearchTracker(uuid, FloatingLong.ZERO));
+            researchTrackers.put(uuid, new ResearchTracker(uuid, this.world, FloatingLong.ZERO));
 
         return researchTrackers.get(uuid);
     }
