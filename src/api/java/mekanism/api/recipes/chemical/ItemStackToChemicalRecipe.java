@@ -12,6 +12,7 @@ import mekanism.api.recipes.inputs.ItemStackIngredient;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
+import org.jetbrains.annotations.Contract;
 
 @FieldsAreNonnullByDefault
 @ParametersAreNonnullByDefault
@@ -37,6 +38,7 @@ public abstract class ItemStackToChemicalRecipe<CHEMICAL extends Chemical<CHEMIC
         return input;
     }
 
+    @Contract(value = "_ -> new", pure = true)
     public abstract STACK getOutput(ItemStack input);
 
     public STACK getOutputDefinition() {

@@ -73,8 +73,8 @@ public class GeneratorsRecipeProvider extends BaseRecipeProvider {
         //Heavy water
         ElectrolysisRecipeBuilder.separating(
               FluidStackIngredient.from(MekanismTags.Fluids.HEAVY_WATER, 2),
-              GeneratorsGases.DEUTERIUM.getGasStack(2),
-              MekanismGases.OXYGEN.getGasStack(1)
+              GeneratorsGases.DEUTERIUM.getStack(2),
+              MekanismGases.OXYGEN.getStack(1)
         ).energyMultiplier(FloatingLong.createConst(2))
               .build(consumer, MekanismGenerators.rl(basePath + "heavy_water"));
     }
@@ -91,7 +91,7 @@ public class GeneratorsRecipeProvider extends BaseRecipeProvider {
         RotaryRecipeBuilder.rotary(
               FluidStackIngredient.from(fluidInput, 1),
               GasStackIngredient.from(gasInput, 1),
-              gas.getGasStack(1),
+              gas.getStack(1),
               fluidOutput.getFluidStack(1)
         ).build(consumer, MekanismGenerators.rl(basePath + gas.getName()));
     }
@@ -102,7 +102,7 @@ public class GeneratorsRecipeProvider extends BaseRecipeProvider {
         ChemicalInfuserRecipeBuilder.chemicalInfusing(
               GasStackIngredient.from(GeneratorsGases.DEUTERIUM, 1),
               GasStackIngredient.from(GeneratorsGases.TRITIUM, 1),
-              GeneratorsGases.FUSION_FUEL.getGasStack(1)
+              GeneratorsGases.FUSION_FUEL.getStack(1)
         ).build(consumer, MekanismGenerators.rl(basePath + "fusion_fuel"));
     }
 
@@ -110,7 +110,7 @@ public class GeneratorsRecipeProvider extends BaseRecipeProvider {
         String basePath = "activating/";
         GasToGasRecipeBuilder.activating(
               GasStackIngredient.from(MekanismGases.LITHIUM, 1),
-              GeneratorsGases.TRITIUM.getGasStack(1)
+              GeneratorsGases.TRITIUM.getStack(1)
         ).build(consumer, MekanismGenerators.rl(basePath + "tritium"));
     }
 
@@ -232,7 +232,7 @@ public class GeneratorsRecipeProvider extends BaseRecipeProvider {
                     TripleLine.of(Pattern.INGOT, Pattern.STEEL, Pattern.INGOT))
               ).key(Pattern.INGOT, MekanismTags.Items.PROCESSED_RESOURCES.get(ResourceType.INGOT, PrimaryResource.LEAD))
               .key(Pattern.STEEL, MekanismTags.Items.INGOTS_STEEL)
-              .key(Pattern.TANK, MekanismBlocks.BASIC_GAS_TANK)
+              .key(Pattern.TANK, MekanismBlocks.BASIC_CHEMICAL_TANK)
               .build(consumer, MekanismGenerators.rl("fission_reactor/fuel_assembly"));
         //Control Rod Assembly
         ExtendedShapedRecipeBuilder.shapedRecipe(GeneratorsBlocks.CONTROL_ROD_ASSEMBLY)
@@ -322,7 +322,7 @@ public class GeneratorsRecipeProvider extends BaseRecipeProvider {
               ).key(Pattern.CIRCUIT, MekanismTags.Items.CIRCUITS_ULTIMATE)
               .key(GLASS_CHAR, Tags.Items.GLASS_PANES)
               .key(FRAME_CHAR, GeneratorsBlocks.FUSION_REACTOR_FRAME)
-              .key(Pattern.TANK, MekanismBlocks.BASIC_GAS_TANK)
+              .key(Pattern.TANK, MekanismBlocks.BASIC_CHEMICAL_TANK)
               .build(consumer, MekanismGenerators.rl("reactor/controller"));
     }
 

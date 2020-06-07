@@ -11,6 +11,7 @@ import mekanism.api.recipes.inputs.ItemStackIngredient;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketBuffer;
 import net.minecraft.util.ResourceLocation;
+import org.jetbrains.annotations.Contract;
 
 /**
  * Inputs: ItemStack (item) Output: ItemStack (transformed)
@@ -38,6 +39,7 @@ public abstract class ItemStackToItemStackRecipe extends MekanismRecipe implemen
         return input;
     }
 
+    @Contract(value = "_ -> new", pure = true)
     public ItemStack getOutput(ItemStack input) {
         return output.copy();
     }

@@ -15,7 +15,6 @@ import mekanism.api.chemical.IChemicalHandler;
 import mekanism.api.chemical.IChemicalTank;
 import mekanism.api.chemical.gas.BasicGasTank;
 import mekanism.api.chemical.gas.GasStack;
-import mekanism.api.chemical.gas.IGasHandler;
 import mekanism.api.chemical.infuse.BasicInfusionTank;
 import mekanism.api.chemical.infuse.InfusionStack;
 import mekanism.api.chemical.pigment.BasicPigmentTank;
@@ -69,29 +68,76 @@ public class StorageUtils {
     }
 
     public static void addStoredGas(@Nonnull ItemStack stack, @Nonnull List<ITextComponent> tooltip, boolean showMissingCap, boolean showAttributes) {
-        addStoredGas(stack, tooltip, showMissingCap, showAttributes, MekanismLang.NO_GAS, stored -> {
+        addStoredChemical(stack, tooltip, showMissingCap, showAttributes, MekanismLang.NO_GAS, stored -> {
             if (stored.isEmpty()) {
                 return MekanismLang.NO_GAS.translateColored(EnumColor.GRAY);
             }
             return MekanismLang.STORED.translateColored(EnumColor.ORANGE, EnumColor.ORANGE, stored, EnumColor.GRAY, stored.getAmount());
-        });
+        }, Capabilities.GAS_HANDLER_CAPABILITY);
     }
 
-    public static void addStoredGas(@Nonnull ItemStack stack, @Nonnull List<ITextComponent> tooltip, boolean showMissingCap, boolean showAttributes,
-          ILangEntry emptyLangEntry, Function<GasStack, ITextComponent> storedFunction) {
-        if (Capabilities.GAS_HANDLER_CAPABILITY != null) {
+    public static <CHEMICAL extends Chemical<CHEMICAL>, STACK extends ChemicalStack<CHEMICAL>, HANDLER extends IChemicalHandler<CHEMICAL, STACK>>
+    void addStoredChemical(@Nonnull ItemStack stack, @Nonnull List<ITextComponent> tooltip, boolean showMissingCap, boolean showAttributes, ILangEntry emptyLangEntry,
+          Function<STACK, ITextComponent> storedFunction, Capability<HANDLER> capability) {
+        if (capability != null) {
             //Ensure the capability is not null, as the first call to addInformation happens before capability injection
-            Optional<IGasHandler> capability = MekanismUtils.toOptional(stack.getCapability(Capabilities.GAS_HANDLER_CAPABILITY));
-            if (capability.isPresent()) {
-                IGasHandler gasHandlerItem = capability.get();
-                int tanks = gasHandlerItem.getTanks();
+            Optional<HANDLER> cap = MekanismUtils.toOptional(stack.getCapability(capability));
+            if (cap.isPresent()) {
+                HANDLER handler = cap.get();
+                int tanks = handler.getTanks();
                 for (int tank = 0; tank < tanks; tank++) {
-                    GasStack gasInTank = gasHandlerItem.getChemicalInTank(tank);
-                    tooltip.add(storedFunction.apply(gasInTank));
-                    tooltip.addAll(ChemicalUtil.getAttributeTooltips(gasInTank.getType()));
+                    STACK chemicalInTank = handler.getChemicalInTank(tank);
+                    tooltip.add(storedFunction.apply(chemicalInTank));
+                    if (showAttributes) {
+                        tooltip.addAll(ChemicalUtil.getAttributeTooltips(chemicalInTank.getType()));
+                    }
                 }
             } else if (showMissingCap) {
                 tooltip.add(emptyLangEntry.translate());
+            }
+        }
+    }
+
+    /**
+     * @implNote Assumes there is only one "tank"
+     */
+    public static void addStoredSubstance(@Nonnull ItemStack stack, @Nonnull List<ITextComponent> tooltip, boolean isCreative) {
+        //Note we ensure the capabilities are not null, as the first call to addInformation happens before capability injection
+        if (Capabilities.GAS_HANDLER_CAPABILITY == null || Capabilities.INFUSION_HANDLER_CAPABILITY == null || Capabilities.PIGMENT_HANDLER_CAPABILITY == null ||
+            Capabilities.SLURRY_HANDLER_CAPABILITY == null || CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY == null) {
+            return;
+        }
+        FluidStack fluidStack = StorageUtils.getStoredFluidFromNBT(stack);
+        GasStack gasStack = StorageUtils.getStoredGasFromNBT(stack);
+        InfusionStack infusionStack = StorageUtils.getStoredInfusionFromNBT(stack);
+        PigmentStack pigmentStack = StorageUtils.getStoredPigmentFromNBT(stack);
+        SlurryStack slurryStack = StorageUtils.getStoredSlurryFromNBT(stack);
+        //TODO - V10: Improve this further by also including the "type" of the stored substance
+        if (fluidStack.isEmpty() && gasStack.isEmpty() && infusionStack.isEmpty() && pigmentStack.isEmpty() && slurryStack.isEmpty()) {
+            tooltip.add(MekanismLang.EMPTY.translate());
+        } else if (!fluidStack.isEmpty()) {
+            if (isCreative) {
+                tooltip.add(MekanismLang.GENERIC_STORED.translateColored(EnumColor.ORANGE, fluidStack, EnumColor.GRAY, MekanismLang.INFINITE));
+            } else {
+                tooltip.add(MekanismLang.GENERIC_STORED_MB.translateColored(EnumColor.ORANGE, fluidStack, EnumColor.GRAY, fluidStack.getAmount()));
+            }
+        } else {
+            ChemicalStack<?> chemicalStack;
+            if (!gasStack.isEmpty()) {
+                chemicalStack = gasStack;
+            } else if (!infusionStack.isEmpty()) {
+                chemicalStack = infusionStack;
+            } else if (!pigmentStack.isEmpty()) {
+                chemicalStack = pigmentStack;
+            } else if (!slurryStack.isEmpty()) {
+                chemicalStack = slurryStack;
+            } else {
+                throw new IllegalStateException("Unknown chemical");
+            }
+            if (isCreative) {
+                tooltip.add(MekanismLang.GENERIC_STORED.translateColored(EnumColor.ORANGE, chemicalStack, EnumColor.GRAY, MekanismLang.INFINITE));
+            } else {
+                tooltip.add(MekanismLang.GENERIC_STORED_MB.translateColored(EnumColor.ORANGE, chemicalStack, EnumColor.GRAY, chemicalStack.getAmount()));
             }
         }
     }
@@ -113,7 +159,7 @@ public class StorageUtils {
      */
     @Nonnull
     public static GasStack getStoredGasFromNBT(ItemStack stack) {
-        return getStoredChemicalFromNBT(stack, BasicGasTank.create(Long.MAX_VALUE, null), NBTConstants.GAS_TANKS);
+        return getStoredChemicalFromNBT(stack, BasicGasTank.createDummy(Long.MAX_VALUE), NBTConstants.GAS_TANKS);
     }
 
     /**
@@ -122,7 +168,7 @@ public class StorageUtils {
      */
     @Nonnull
     public static InfusionStack getStoredInfusionFromNBT(ItemStack stack) {
-        return getStoredChemicalFromNBT(stack, BasicInfusionTank.create(Long.MAX_VALUE, null), NBTConstants.INFUSION_TANKS);
+        return getStoredChemicalFromNBT(stack, BasicInfusionTank.createDummy(Long.MAX_VALUE), NBTConstants.INFUSION_TANKS);
     }
 
     /**
@@ -131,7 +177,7 @@ public class StorageUtils {
      */
     @Nonnull
     public static PigmentStack getStoredPigmentFromNBT(ItemStack stack) {
-        return getStoredChemicalFromNBT(stack, BasicPigmentTank.create(Long.MAX_VALUE, null), NBTConstants.PIGMENT_TANKS);
+        return getStoredChemicalFromNBT(stack, BasicPigmentTank.createDummy(Long.MAX_VALUE), NBTConstants.PIGMENT_TANKS);
     }
 
     /**
@@ -140,12 +186,11 @@ public class StorageUtils {
      */
     @Nonnull
     public static SlurryStack getStoredSlurryFromNBT(ItemStack stack) {
-        return getStoredChemicalFromNBT(stack, BasicSlurryTank.create(Long.MAX_VALUE, null), NBTConstants.SLURRY_TANKS);
+        return getStoredChemicalFromNBT(stack, BasicSlurryTank.createDummy(Long.MAX_VALUE), NBTConstants.SLURRY_TANKS);
     }
 
     @Nonnull
-    private static <CHEMICAL extends Chemical<CHEMICAL>, STACK extends ChemicalStack<CHEMICAL>, TANK extends IChemicalTank<CHEMICAL, STACK>>
-    STACK getStoredChemicalFromNBT(ItemStack stack, TANK tank, String tag) {
+    private static <STACK extends ChemicalStack<?>> STACK getStoredChemicalFromNBT(ItemStack stack, IChemicalTank<?, STACK> tank, String tag) {
         DataHandlerUtils.readContainers(Collections.singletonList(tank), ItemDataUtils.getList(stack, tag));
         return tank.getStack();
     }
@@ -232,11 +277,10 @@ public class StorageUtils {
         return 1 - bestRatio;
     }
 
-    private static <CHEMICAL extends Chemical<CHEMICAL>, STACK extends ChemicalStack<CHEMICAL>, HANDLER extends IChemicalHandler<CHEMICAL, STACK>>
-    double calculateRatio(ItemStack stack, double bestRatio, Capability<HANDLER> capability) {
-        Optional<HANDLER> cap = MekanismUtils.toOptional(stack.getCapability(capability));
+    private static double calculateRatio(ItemStack stack, double bestRatio, Capability<? extends IChemicalHandler<?, ?>> capability) {
+        Optional<? extends IChemicalHandler<?, ?>> cap = MekanismUtils.toOptional(stack.getCapability(capability));
         if (cap.isPresent()) {
-            HANDLER handler = cap.get();
+            IChemicalHandler<?, ?> handler = cap.get();
             for (int tank = 0, tanks = handler.getTanks(); tank < tanks; tank++) {
                 bestRatio = Math.max(bestRatio, getRatio(handler.getChemicalInTank(tank).getAmount(), handler.getTankCapacity(tank)));
             }

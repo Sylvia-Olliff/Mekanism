@@ -11,10 +11,9 @@ import mekanism.api.chemical.infuse.InfusionStack;
 import mekanism.api.chemical.pigment.PigmentStack;
 import mekanism.api.chemical.slurry.SlurryStack;
 import mekanism.api.fluid.IExtendedFluidHandler;
-import mekanism.common.MekanismLang;
-import mekanism.common.capabilities.Capabilities;
-import mekanism.common.capabilities.GaugeDropperContentsHandler;
 import mekanism.common.capabilities.ItemCapabilityWrapper;
+import mekanism.common.capabilities.merged.GaugeDropperContentsHandler;
+import mekanism.common.util.ChemicalUtil;
 import mekanism.common.util.MekanismUtils;
 import mekanism.common.util.StorageUtils;
 import net.minecraft.client.util.ITooltipFlag;
@@ -31,7 +30,6 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraft.world.World;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.CapabilityFluidHandler;
@@ -56,32 +54,16 @@ public class ItemGaugeDropper extends Item {
     @Override
     public int getRGBDurabilityForDisplay(ItemStack stack) {
         //TODO: Technically doesn't support things where the color is part of the texture such as lava
-        GasStack gasStack = StorageUtils.getStoredGasFromNBT(stack);
-        if (!gasStack.isEmpty()) {
-            return gasStack.getChemicalTint();
-        }
-        InfusionStack infusionStack = StorageUtils.getStoredInfusionFromNBT(stack);
-        if (!infusionStack.isEmpty()) {
-            return infusionStack.getChemicalTint();
-        }
-        PigmentStack pigmentStack = StorageUtils.getStoredPigmentFromNBT(stack);
-        if (!pigmentStack.isEmpty()) {
-            return pigmentStack.getChemicalTint();
-        }
-        SlurryStack slurryStack = StorageUtils.getStoredSlurryFromNBT(stack);
-        if (!slurryStack.isEmpty()) {
-            return slurryStack.getChemicalTint();
-        }
         FluidStack fluidStack = StorageUtils.getStoredFluidFromNBT(stack);
         if (!fluidStack.isEmpty()) {
             return fluidStack.getFluid().getAttributes().getColor(fluidStack);
         }
-        return 0;
+        return ChemicalUtil.getRGBDurabilityForDisplay(stack);
     }
 
     @Nonnull
     @Override
-    public ActionResult<ItemStack> onItemRightClick(World world, PlayerEntity player, @Nonnull Hand hand) {
+    public ActionResult<ItemStack> onItemRightClick(@Nonnull World world, PlayerEntity player, @Nonnull Hand hand) {
         ItemStack stack = player.getHeldItem(hand);
         if (player.isSneaking() && !world.isRemote) {
             Optional<IFluidHandlerItem> fluidCapability = MekanismUtils.toOptional(stack.getCapability(CapabilityFluidHandler.FLUID_HANDLER_ITEM_CAPABILITY));
@@ -94,21 +76,20 @@ public class ItemGaugeDropper extends Item {
                     }
                 }
             }
-            clearChemicalTanks(stack, GasStack.EMPTY, Capabilities.GAS_HANDLER_CAPABILITY);
-            clearChemicalTanks(stack, InfusionStack.EMPTY, Capabilities.INFUSION_HANDLER_CAPABILITY);
-            clearChemicalTanks(stack, PigmentStack.EMPTY, Capabilities.PIGMENT_HANDLER_CAPABILITY);
-            clearChemicalTanks(stack, SlurryStack.EMPTY, Capabilities.SLURRY_HANDLER_CAPABILITY);
+            clearChemicalTanks(stack, GasStack.EMPTY);
+            clearChemicalTanks(stack, InfusionStack.EMPTY);
+            clearChemicalTanks(stack, PigmentStack.EMPTY);
+            clearChemicalTanks(stack, SlurryStack.EMPTY);
             ((ServerPlayerEntity) player).sendContainerToPlayer(player.openContainer);
             return new ActionResult<>(ActionResultType.SUCCESS, stack);
         }
         return new ActionResult<>(ActionResultType.PASS, stack);
     }
 
-    private static <CHEMICAL extends Chemical<CHEMICAL>, STACK extends ChemicalStack<CHEMICAL>, HANDLER extends IChemicalHandler<CHEMICAL, STACK>>
-    void clearChemicalTanks(ItemStack stack, STACK empty, Capability<HANDLER> capability) {
-        Optional<HANDLER> cap = MekanismUtils.toOptional(stack.getCapability(capability));
+    private static <CHEMICAL extends Chemical<CHEMICAL>, STACK extends ChemicalStack<CHEMICAL>> void clearChemicalTanks(ItemStack stack, STACK empty) {
+        Optional<IChemicalHandler<CHEMICAL, STACK>> cap = MekanismUtils.toOptional(stack.getCapability(ChemicalUtil.getCapabilityForChemical(empty)));
         if (cap.isPresent()) {
-            HANDLER handler = cap.get();
+            IChemicalHandler<CHEMICAL, STACK> handler = cap.get();
             for (int tank = 0; tank < handler.getTanks(); tank++) {
                 handler.setChemicalInTank(tank, empty);
             }
@@ -117,25 +98,8 @@ public class ItemGaugeDropper extends Item {
 
     @Override
     @OnlyIn(Dist.CLIENT)
-    public void addInformation(ItemStack stack, World world, List<ITextComponent> tooltip, ITooltipFlag flag) {
-        GasStack gasStack = StorageUtils.getStoredGasFromNBT(stack);
-        InfusionStack infusionStack = StorageUtils.getStoredInfusionFromNBT(stack);
-        PigmentStack pigmentStack = StorageUtils.getStoredPigmentFromNBT(stack);
-        SlurryStack slurryStack = StorageUtils.getStoredSlurryFromNBT(stack);
-        FluidStack fluidStack = StorageUtils.getStoredFluidFromNBT(stack);
-        if (gasStack.isEmpty() && infusionStack.isEmpty() && pigmentStack.isEmpty() && slurryStack.isEmpty() && fluidStack.isEmpty()) {
-            tooltip.add(MekanismLang.EMPTY.translate());
-        } else if (!gasStack.isEmpty()) {
-            tooltip.add(MekanismLang.STORED.translate(gasStack, gasStack.getAmount()));
-        } else if (!infusionStack.isEmpty()) {
-            tooltip.add(MekanismLang.STORED.translate(infusionStack, infusionStack.getAmount()));
-        } else if (!pigmentStack.isEmpty()) {
-            tooltip.add(MekanismLang.STORED.translate(pigmentStack, pigmentStack.getAmount()));
-        } else if (!slurryStack.isEmpty()) {
-            tooltip.add(MekanismLang.STORED.translate(slurryStack, slurryStack.getAmount()));
-        } else if (!fluidStack.isEmpty()) {
-            tooltip.add(MekanismLang.STORED.translate(fluidStack, fluidStack.getAmount()));
-        }
+    public void addInformation(@Nonnull ItemStack stack, World world, @Nonnull List<ITextComponent> tooltip, @Nonnull ITooltipFlag flag) {
+        StorageUtils.addStoredSubstance(stack, tooltip, false);
     }
 
     @Override

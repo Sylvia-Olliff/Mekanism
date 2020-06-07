@@ -34,7 +34,7 @@ import mekanism.common.network.PacketModeChange;
 import mekanism.common.network.PacketPortableTeleporterGui;
 import mekanism.common.network.PacketPortableTeleporterGui.PortableTeleporterPacketType;
 import mekanism.common.registries.MekanismGases;
-import mekanism.common.util.GasUtils;
+import mekanism.common.util.ChemicalUtil;
 import mekanism.common.util.MekanismUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.model.PlayerModel;
@@ -93,9 +93,9 @@ public class ClientTickHandler {
 
     /** Will return null if jetpack module is not active */
     private static JetpackMode getJetpackMode(ItemStack stack) {
-        if (stack.getItem() instanceof ItemJetpack && GasUtils.hasGas(stack)) {
+        if (stack.getItem() instanceof ItemJetpack && ChemicalUtil.hasGas(stack)) {
             return ((ItemJetpack) stack.getItem()).getMode(stack);
-        } else if (stack.getItem() instanceof IModuleContainerItem && GasUtils.hasGas(stack, MekanismGases.HYDROGEN.get())) {
+        } else if (stack.getItem() instanceof IModuleContainerItem && ChemicalUtil.hasChemical(stack, MekanismGases.HYDROGEN.get())) {
             ModuleJetpackUnit module = Modules.load(stack, Modules.JETPACK_UNIT);
             if (module != null && module.isEnabled()) {
                 return module.getMode();
@@ -135,7 +135,7 @@ public class ClientTickHandler {
 
     public static boolean hasFlamethrower(PlayerEntity player) {
         ItemStack currentItem = player.inventory.getCurrentItem();
-        return !currentItem.isEmpty() && currentItem.getItem() instanceof ItemFlamethrower && GasUtils.hasGas(currentItem);
+        return !currentItem.isEmpty() && currentItem.getItem() instanceof ItemFlamethrower && ChemicalUtil.hasGas(currentItem);
     }
 
     public static void portableTeleport(PlayerEntity player, Hand hand, TeleporterFrequency freq) {
@@ -348,6 +348,15 @@ public class ClientTickHandler {
             PlayerEntity entity = (PlayerEntity) evt.getEntity();
             if (entity.getItemStackFromSlot(EquipmentSlotType.HEAD).getItem() instanceof ItemMekaSuitArmor) {
                 evt.getRenderer().getEntityModel().bipedHead.showModel = false;
+            }
+            if (entity.getItemStackFromSlot(EquipmentSlotType.CHEST).getItem() instanceof ItemMekaSuitArmor) {
+                evt.getRenderer().getEntityModel().bipedBody.showModel = false;
+                evt.getRenderer().getEntityModel().bipedLeftArm.showModel = false;
+                evt.getRenderer().getEntityModel().bipedRightArm.showModel = false;
+            }
+            if (entity.getItemStackFromSlot(EquipmentSlotType.LEGS).getItem() instanceof ItemMekaSuitArmor) {
+                evt.getRenderer().getEntityModel().bipedLeftLeg.showModel = false;
+                evt.getRenderer().getEntityModel().bipedRightLeg.showModel = false;
             }
         }
     }
