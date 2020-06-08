@@ -8,8 +8,6 @@ import java.util.UUID;
 
 public class ResearchTracker {
 
-    //TODO: Add NBT saving for player research data.
-    //TODO: Add tracking of unlocked research.
     private static final long MAX_RESEARCH_POINTS = 500_000_000L;
 
     private final UUID playerId;
@@ -48,20 +46,22 @@ public class ResearchTracker {
             else
                 researchPoints += points;
 
-            if (!this.world.isRemote()) {
+            //Server side only and player must still be logged in.
+            if (!this.world.isRemote() && world.getPlayerByUuid(playerId) != null) {
                 MekanismResearch.packetHandler.sendToAllTracking(new PacketResearchUpdate(playerId, points), world.getPlayerByUuid(playerId));
             }
         }
     }
 
-    public boolean canResearch(long pointCost) { return pointCost < researchPoints; }
+    public boolean canResearch(long pointCost) { return pointCost <= researchPoints; }
 
     public void spendPoints(long pointCost) {
         synchronized (lockObj) {
             if (canResearch(pointCost)) {
                 researchPoints -= pointCost;
 
-                if (!this.world.isRemote()) {
+                //Server side only and player must still be logged in.
+                if (!this.world.isRemote() && world.getPlayerByUuid(playerId) != null) {
                     MekanismResearch.packetHandler.sendToAllTracking(new PacketResearchUpdate(playerId, -pointCost), world.getPlayerByUuid(playerId));
                 }
             }

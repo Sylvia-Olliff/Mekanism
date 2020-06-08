@@ -49,10 +49,10 @@ public class PacketResearchPlayerData {
 
     public static void encode(PacketResearchPlayerData pkt, PacketBuffer buf) {
         buf.writeUniqueId(pkt.uuid);
-        buf.writeLong(pkt.currentPoints);
+        buf.writeVarLong(pkt.currentPoints);
     }
 
     public static PacketResearchPlayerData decode(PacketBuffer buf) {
-        return new PacketResearchPlayerData(buf.readUniqueId(), buf.readLong());
+        return new PacketResearchPlayerData(buf.readUniqueId(), buf.readVarLong());
     }
 }

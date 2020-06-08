@@ -20,7 +20,14 @@ public class ResearchCapabilityProvider implements ICapabilitySerializable<INBT>
     @Nonnull
     @Override
     public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
-        return cap == RESEARCH_PLAYER_CAPABILITY ? instance.cast() : LazyOptional.empty();
+        if (cap == RESEARCH_PLAYER_CAPABILITY) {
+            // Return the given instance if it has been set, else recreate it. Covers someone accidentally invalidating the capability.
+            if (instance == null || !instance.isPresent()) {
+                instance = LazyOptional.of(RESEARCH_PLAYER_CAPABILITY::getDefaultInstance);
+            }
+            return instance.cast();
+        }
+        return LazyOptional.empty();
     }
 
     @Override

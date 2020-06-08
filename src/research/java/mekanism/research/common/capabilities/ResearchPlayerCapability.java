@@ -32,6 +32,10 @@ public class ResearchPlayerCapability implements INBTSerializable<CompoundNBT>, 
     }
 
     public long addPoints(long amount, Action action) {
+        // fail fast if this negative
+        if (amount <= 0L)
+            return amount;
+
         if (amount + researchPoints > MAX_RESEARCH_POINTS) {
             if (action.execute())
             {
@@ -51,6 +55,10 @@ public class ResearchPlayerCapability implements INBTSerializable<CompoundNBT>, 
 
 
     public long removePoints(long amount, Action action) {
+        // Flip if amount isn't negative
+        if (amount > 0)
+            amount = -amount;
+
         if (researchPoints - amount < 0L) {
             long pointsRemoved = researchPoints;
             if (action.execute())
