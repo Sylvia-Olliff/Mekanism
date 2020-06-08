@@ -15,9 +15,7 @@ public class ResearchPlayerTracker {
 
     @SubscribeEvent
     public void onPlayerLogoutEvent(PlayerEvent.PlayerLoggedOutEvent event) {
-        if (!event.getPlayer().world.isRemote) {
-            MekanismResearch.playerStateResearch.clearPlayer(event.getPlayer().getUniqueID());
-        }
+        MekanismResearch.playerStateResearch.clearPlayer(event.getPlayer().getUniqueID());
     }
 
     @SubscribeEvent
@@ -25,5 +23,11 @@ public class ResearchPlayerTracker {
         if (!event.getPlayer().world.isRemote) {
             event.getPlayer().getCapability(ResearchCapabilityProvider.RESEARCH_PLAYER_CAPABILITY).ifPresent(c -> PacketResearchPlayerData.sync((ServerPlayerEntity) event.getPlayer()));
         }
+    }
+
+    @SubscribeEvent
+    public void onPlayerDimChangedEvent(PlayerEvent.PlayerChangedDimensionEvent event) {
+        MekanismResearch.playerStateResearch.clearPlayer(event.getPlayer().getUniqueID());
+        event.getPlayer().getCapability(ResearchCapabilityProvider.RESEARCH_PLAYER_CAPABILITY).ifPresent(c -> PacketResearchPlayerData.sync((ServerPlayerEntity) event.getPlayer()));
     }
 }

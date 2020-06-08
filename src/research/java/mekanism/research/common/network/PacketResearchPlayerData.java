@@ -27,7 +27,8 @@ public class PacketResearchPlayerData {
     }
 
     public static void sync(ServerPlayerEntity player) {
-        player.getCapability(ResearchCapabilityProvider.RESEARCH_PLAYER_CAPABILITY).ifPresent(c -> MekanismResearch.packetHandler.sendTo(new PacketResearchPlayerData(player.getUniqueID(), c.getResearchPoints()), player));
+        player.getCapability(ResearchCapabilityProvider.RESEARCH_PLAYER_CAPABILITY).ifPresent(c ->
+                MekanismResearch.packetHandler.sendTo(new PacketResearchPlayerData(player.getUniqueID(), c.getResearchPoints()), player));
     }
 
     public static void handle(PacketResearchPlayerData message, Supplier<Context> context) {
@@ -37,6 +38,7 @@ public class PacketResearchPlayerData {
 
         context.get().enqueueWork(() -> {
             MekanismResearch.playerStateResearch.setResearchPlayerState(message.uuid, message.currentPoints, false);
+            player.getCapability(ResearchCapabilityProvider.RESEARCH_PLAYER_CAPABILITY).ifPresent(c -> c.setResearchPoints(message.currentPoints));
 
             if (!player.world.isRemote) {
                 MekanismResearch.packetHandler.sendToAllTracking(new PacketResearchPlayerData(message.uuid), player);

@@ -1,7 +1,9 @@
 package mekanism.research.common.network;
 
+import mekanism.api.Action;
 import mekanism.common.network.BasePacketHandler;
 import mekanism.research.common.MekanismResearch;
+import mekanism.research.common.capabilities.ResearchCapabilityProvider;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
@@ -24,11 +26,15 @@ public class PacketResearchUpdate {
             return;
 
         context.get().enqueueWork(() -> {
-            MekanismResearch.playerStateResearch.getPlayerResearch(player).addPoints(message.points);
+            player.getCapability(ResearchCapabilityProvider.RESEARCH_PLAYER_CAPABILITY).ifPresent(c -> {
+                if (message.points > 0L)
+                    c.addPoints(message.points, Action.EXECUTE);
+                else
+                    c.removePoints(message.points, Action.EXECUTE);
+            });
 
-            if (!player.world.isRemote) {
+            if (!player.world.isRemote)
                 MekanismResearch.packetHandler.sendToAllTracking(new PacketResearchPlayerData(message.uuid), player);
-            }
         });
         context.get().setPacketHandled(true);
     }
