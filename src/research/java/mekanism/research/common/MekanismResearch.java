@@ -7,7 +7,10 @@ import mekanism.common.lib.Version;
 import mekanism.common.lib.multiblock.MultiblockManager;
 import mekanism.research.client.ResearchClient;
 import mekanism.research.common.base.PlayerStateResearch;
+import mekanism.research.common.capabilities.ResearchPlayerCapability;
+import mekanism.research.common.capabilities.ResearchPlayerCapabilityStorage;
 import mekanism.research.common.config.MekanismResearchConfig;
+import mekanism.research.common.config.ResearchConfig;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorCache;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorMultiblockData;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorStructureValidator;
@@ -16,6 +19,7 @@ import mekanism.research.common.registries.ResearchBlocks;
 import mekanism.research.common.registries.ResearchTileEntityTypes;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.capabilities.CapabilityManager;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.ModLoadingContext;
@@ -66,6 +70,10 @@ public class MekanismResearch implements IModule {
     public void commonSetup(FMLCommonSetupEvent event) {
 
         MinecraftForge.EVENT_BUS.register(this);
+
+        // Register Capabilities
+        CapabilityManager.INSTANCE.register(ResearchPlayerCapability.class, new ResearchPlayerCapabilityStorage(),
+                () -> new ResearchPlayerCapability(500_000_000L, null));
 
         //Finalization
         Mekanism.logger.info("Loaded 'Mekanism Research' module.");

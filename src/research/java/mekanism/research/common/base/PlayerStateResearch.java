@@ -1,6 +1,5 @@
 package mekanism.research.common.base;
 
-import mekanism.api.math.FloatingLong;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.world.IWorld;
 import java.util.TreeMap;
@@ -46,14 +45,14 @@ public class PlayerStateResearch {
 
     public ResearchTracker getPlayerResearch(PlayerEntity p) {
         if (!researchTrackers.containsKey(p.getUniqueID()))
-            researchTrackers.put(p.getUniqueID(), new ResearchTracker(p.getUniqueID(), this.world, FloatingLong.ZERO));
+            researchTrackers.put(p.getUniqueID(), new ResearchTracker(p.getUniqueID(), this.world, 0L));
 
         return researchTrackers.get(p.getUniqueID());
     }
 
     public ResearchTracker getPlayerResearch(UUID uuid) {
         if (!researchTrackers.containsKey(uuid))
-            researchTrackers.put(uuid, new ResearchTracker(uuid, this.world, FloatingLong.ZERO));
+            researchTrackers.put(uuid, new ResearchTracker(uuid, this.world, 0L));
 
         return researchTrackers.get(uuid);
     }

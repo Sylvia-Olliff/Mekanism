@@ -2,7 +2,9 @@ package mekanism.research.common.network;
 
 import mekanism.common.network.BasePacketHandler;
 import mekanism.research.common.MekanismResearch;
+import mekanism.research.common.capabilities.ResearchCapabilityProvider;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.player.ServerPlayerEntity;
 import net.minecraft.network.PacketBuffer;
 import net.minecraftforge.fml.network.NetworkEvent.Context;
 
@@ -22,6 +24,10 @@ public class PacketResearchPlayerData {
     private PacketResearchPlayerData(UUID uuid, long points) {
         this.uuid = uuid;
         this.currentPoints = points;
+    }
+
+    public static void sync(ServerPlayerEntity player) {
+        player.getCapability(ResearchCapabilityProvider.RESEARCH_PLAYER_CAPABILITY).ifPresent(c -> MekanismResearch.packetHandler.sendTo(new PacketResearchPlayerData(player.getUniqueID(), c.getResearchPoints()), player));
     }
 
     public static void handle(PacketResearchPlayerData message, Supplier<Context> context) {
