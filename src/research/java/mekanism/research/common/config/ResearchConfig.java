@@ -4,6 +4,7 @@ import com.sun.javaws.exceptions.InvalidArgumentException;
 import mekanism.api.math.FloatingLong;
 import mekanism.common.config.BaseMekanismConfig;
 import mekanism.common.config.value.CachedFloatingLongValue;
+import mekanism.common.config.value.CachedLongValue;
 import mekanism.research.common.base.ResearchTracker;
 import mekanism.research.common.tier.AcceleratorTier;
 import net.minecraftforge.common.ForgeConfigSpec;
@@ -15,13 +16,13 @@ public class ResearchConfig extends BaseMekanismConfig {
     private final ForgeConfigSpec configSpec;
 
     public final CachedFloatingLongValue accelBasicPowerPerBlock;
-    public final CachedFloatingLongValue accelBasicParticleProduction;
+    public final CachedLongValue accelBasicParticleProduction;
     public final CachedFloatingLongValue accelAdvPowerPerBlock;
-    public final CachedFloatingLongValue accelAdvParticleProduction;
+    public final CachedLongValue accelAdvParticleProduction;
     public final CachedFloatingLongValue accelElitePowerPerBlock;
-    public final CachedFloatingLongValue accelEliteParticleProduction;
+    public final CachedLongValue accelEliteParticleProduction;
     public final CachedFloatingLongValue accelUltimatePowerPerBlock;
-    public final CachedFloatingLongValue accelUltimateParticleProduction;
+    public final CachedLongValue accelUltimateParticleProduction;
 
     ResearchConfig() {
         ForgeConfigSpec.Builder builder = new ForgeConfigSpec.Builder();
@@ -32,21 +33,21 @@ public class ResearchConfig extends BaseMekanismConfig {
         // Particle production calculated to increase by 40% per tier
         builder.comment("Particle Accelerator Settings").push(ACCELERATOR_CATEGORY);
         accelBasicPowerPerBlock = CachedFloatingLongValue.define(this, builder, "Amount of power consumed per block",
-                "accelBasicPowerPerBlock", FloatingLong.createConst(50));
-        accelBasicParticleProduction = CachedFloatingLongValue.define(this, builder, "Particle Production (controls both material production and research production rate) per block",
-                "accelBasicParticleProduction", FloatingLong.createConst(10));
+                "accelBasicPowerPerBlock", FloatingLong.createConst(50L));
+        accelBasicParticleProduction = CachedLongValue.wrap(this, builder.comment("Particle Production (controls both material production and research production rate) per block")
+                .define("accelBasicParticleProduction", 10L));
         accelAdvPowerPerBlock = CachedFloatingLongValue.define(this, builder, "Amount of power consumed per block",
-                "accelAdvPowerPerBlock", FloatingLong.createConst(80));
-        accelAdvParticleProduction = CachedFloatingLongValue.define(this, builder, "Particle Production (controls both material production and research production rate) per block",
-                "accelAdvParticleProduction", FloatingLong.createConst(14));
+                "accelAdvPowerPerBlock", FloatingLong.createConst(80L));
+        accelAdvParticleProduction = CachedLongValue.wrap(this, builder.comment("Particle Production (controls both material production and research production rate) per block")
+                .define("accelAdvParticleProduction", 14L));
         accelElitePowerPerBlock = CachedFloatingLongValue.define(this, builder, "Amount of power consumed per block",
-                "accelElitePowerPerBlock", FloatingLong.createConst(128));
-        accelEliteParticleProduction = CachedFloatingLongValue.define(this, builder, "Particle Production (controls both material production and research production rate) per block",
-                "accelEliteParticleProduction", FloatingLong.createConst(19.6));
+                "accelElitePowerPerBlock", FloatingLong.createConst(128L));
+        accelEliteParticleProduction = CachedLongValue.wrap(this, builder.comment("Particle Production (controls both material production and research production rate) per block")
+                .define("accelEliteParticleProduction", 20L));
         accelUltimatePowerPerBlock = CachedFloatingLongValue.define(this, builder, "Amount of power consumed per block",
                 "accelUltimatePowerPerBlock", FloatingLong.createConst(204.8));
-        accelUltimateParticleProduction = CachedFloatingLongValue.define(this, builder, "Particle Production (controls both material production and research production rate) per block",
-                "accelUltimateParticleProduction", FloatingLong.createConst(27.44));
+        accelUltimateParticleProduction = CachedLongValue.wrap(this, builder.comment("Particle Production (controls both material production and research production rate) per block")
+                .define("accelUltimateParticleProduction", 28L));
         builder.pop();
 
         builder.pop();

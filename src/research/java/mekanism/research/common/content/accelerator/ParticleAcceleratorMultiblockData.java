@@ -1,5 +1,7 @@
 package mekanism.research.common.content.accelerator;
 
+import mekanism.api.Action;
+import mekanism.api.inventory.AutomationType;
 import mekanism.api.math.FloatingLong;
 import mekanism.common.capabilities.energy.BasicEnergyContainer;
 import mekanism.common.inventory.container.sync.dynamic.ContainerSync;
@@ -17,6 +19,10 @@ public class ParticleAcceleratorMultiblockData extends MultiblockData {
     private long ticks;
     private AcceleratorTier tier;
     private final UUID ownerId;
+    private boolean isOperating;
+
+    private final FloatingLong powerConsumptionRate;
+    private final long researchGenerationRate;
 
     @ContainerSync
     public BasicEnergyContainer energyContainer;
@@ -26,15 +32,38 @@ public class ParticleAcceleratorMultiblockData extends MultiblockData {
 
         energyContainers.add(energyContainer = BasicEnergyContainer.output(MAX_ENERGY, this));
         ticks = 0L;
+        isOperating = false;
         ownerId = tile.getSecurity().getOwnerUUID();
+
+        // TODO: Set the Tier based on the TE passed in here.
+        powerConsumptionRate = tier.getPowerConsumption().copy().multiply(tile.getStructure().size());
+        researchGenerationRate = tier.getResearchGeneration() * tile.getStructure().size();
     }
 
     @Override
     public boolean tick(World world) {
         ++ticks;
 
-        if (ticks % TICK_FREQUENCY == 0) {
-            MekanismResearch.playerStateResearch.getPlayerResearch(ownerId).addPoints(tier.getResearchGeneration());
+        if (energyContainer.isEmpty() || energyContainer.extract(powerConsumptionRate, Action.SIMULATE, AutomationType.INTERNAL).smallerOrEqual(FloatingLong.ZERO))
+        {
+            //TODO: Send notifications as necessary that the accelerator is no longer operating.
+            if (isOperating)
+                isOperating = false;
+
+            return super.tick(world);
+        }
+        else
+        {
+            //TODO: Send notifications as necessary that the accelerator is now operating.
+            if (!isOperating)
+                isOperating = true;
+
+            if (energyContainer.extract(powerConsumptionRate, Action.EXECUTE, AutomationType.INTERNAL).isZero())
+                isOperating = false;
+        }
+
+        if (isOperating && ticks % TICK_FREQUENCY == 0) {
+            MekanismResearch.playerStateResearch.getPlayerResearch(ownerId).addPoints(researchGenerationRate);
         }
 
         return super.tick(world);

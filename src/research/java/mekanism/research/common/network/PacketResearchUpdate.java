@@ -1,7 +1,5 @@
 package mekanism.research.common.network;
 
-import mekanism.api.math.FloatingLong;
-import mekanism.common.Mekanism;
 import mekanism.common.network.BasePacketHandler;
 import mekanism.research.common.MekanismResearch;
 import net.minecraft.entity.player.PlayerEntity;
@@ -13,9 +11,9 @@ import java.util.function.Supplier;
 public class PacketResearchUpdate {
 
     private final UUID uuid;
-    private final FloatingLong points;
+    private final long points;
 
-    public PacketResearchUpdate(UUID uuid, FloatingLong points) {
+    public PacketResearchUpdate(UUID uuid, long points) {
         this.uuid = uuid;
         this.points = points;
     }
@@ -37,10 +35,10 @@ public class PacketResearchUpdate {
 
     public static void encode(PacketResearchUpdate pkt, PacketBuffer buf) {
         buf.writeUniqueId(pkt.uuid);
-        buf.writeFloat(pkt.points.floatValue());
+        buf.writeLong(pkt.points);
     }
 
     public static PacketResearchUpdate decode(PacketBuffer buf) {
-        return new PacketResearchUpdate(buf.readUniqueId(), FloatingLong.create(buf.readFloat()));
+        return new PacketResearchUpdate(buf.readUniqueId(), buf.readLong());
     }
 }

@@ -1,6 +1,5 @@
 package mekanism.research.common.network;
 
-import mekanism.api.math.FloatingLong;
 import mekanism.common.network.BasePacketHandler;
 import mekanism.research.common.MekanismResearch;
 import net.minecraft.entity.player.PlayerEntity;
@@ -13,14 +12,14 @@ import java.util.function.Supplier;
 public class PacketResearchPlayerData {
 
     private final UUID uuid;
-    private final FloatingLong currentPoints;
+    private final long currentPoints;
 
     public PacketResearchPlayerData(UUID uuid) {
         this.uuid = uuid;
         currentPoints = MekanismResearch.playerStateResearch.getPlayerResearch(uuid).getResearchPoints();
     }
 
-    private PacketResearchPlayerData(UUID uuid, FloatingLong points) {
+    private PacketResearchPlayerData(UUID uuid, long points) {
         this.uuid = uuid;
         this.currentPoints = points;
     }
@@ -42,10 +41,10 @@ public class PacketResearchPlayerData {
 
     public static void encode(PacketResearchPlayerData pkt, PacketBuffer buf) {
         buf.writeUniqueId(pkt.uuid);
-        buf.writeFloat(pkt.currentPoints.floatValue());
+        buf.writeLong(pkt.currentPoints);
     }
 
     public static PacketResearchPlayerData decode(PacketBuffer buf) {
-        return new PacketResearchPlayerData(buf.readUniqueId(), FloatingLong.create(buf.readFloat()));
+        return new PacketResearchPlayerData(buf.readUniqueId(), buf.readLong());
     }
 }

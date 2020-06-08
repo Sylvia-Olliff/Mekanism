@@ -28,7 +28,7 @@ public class PlayerStateResearch {
     //
     // ----------------------
 
-    public void setResearchPlayerState(UUID uuid, FloatingLong currentPoints, boolean isLocal) {
+    public void setResearchPlayerState(UUID uuid, long currentPoints, boolean isLocal) {
 
         if (!researchTrackers.containsKey(uuid))
             researchTrackers.put(uuid, new ResearchTracker(uuid, this.world, currentPoints));
