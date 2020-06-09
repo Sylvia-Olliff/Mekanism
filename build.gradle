@@ -116,11 +116,11 @@ configurations {
     //Make sure all our sub source set stuff extends the proper base methods so that
     // they can see all the dependencies we have in dependencies including forge
     def compileExtenders = [apiCompile, additionsCompile, researchCompile, generatorsCompile, defenseCompile, toolsCompile, testCompile,
-                            datagenmainCompile, datagenadditionsCompile, datagengeneratorsCompile, datagendefenseCompile, datagentoolsCompile]
+                            datagenmainCompile, datagenadditionsCompile, datagengeneratorsCompile, datagendefenseCompile, datagenresearchCompile, datagentoolsCompile]
     def compileOnlyExtenders = [apiCompileOnly, additionsCompileOnly, researchCompileOnly, generatorsCompileOnly, defenseCompileOnly, toolsCompileOnly, testCompileOnly,
-                                datagenmainCompileOnly, datagenadditionsCompileOnly, datagengeneratorsCompileOnly, datagendefenseCompileOnly, datagentoolsCompileOnly]
+                                datagenmainCompileOnly, datagenadditionsCompileOnly, datagengeneratorsCompileOnly, datagendefenseCompileOnly, datagenresearchCompileOnly, datagentoolsCompileOnly]
     def runtimeOnlyExtenders = [apiRuntimeOnly, additionsRuntimeOnly, researchRuntimeOnly, generatorsRuntimeOnly, defenseRuntimeOnly, toolsRuntimeOnly,
-                                datagenmainRuntimeOnly, datagenadditionsRuntimeOnly, datagengeneratorsRuntimeOnly, datagendefenseRuntimeOnly, datagentoolsRuntimeOnly]
+                                datagenmainRuntimeOnly, datagenadditionsRuntimeOnly, datagengeneratorsRuntimeOnly, datagendefenseRuntimeOnly, datagenresearchRuntimeOnly, datagentoolsRuntimeOnly]
     for (def compileExtender : compileExtenders) {
         compileExtender.extendsFrom(compile)
     }
