@@ -35,6 +35,7 @@ import mekanism.common.network.PacketPortableTeleporterGui;
 import mekanism.common.network.PacketPortableTeleporterGui.PortableTeleporterPacketType;
 import mekanism.common.registries.MekanismGases;
 import mekanism.common.util.ChemicalUtil;
+import mekanism.common.util.EnumUtils;
 import mekanism.common.util.MekanismUtils;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.entity.model.PlayerModel;
@@ -67,6 +68,9 @@ public class ClientTickHandler {
     public boolean shouldReset = false;
     public static boolean firstTick = true;
     public static boolean visionEnhancement = false;
+
+    private static long lastScrollTime = -1;
+    private static double scrollDelta;
 
     public static boolean isJetpackActive(PlayerEntity player) {
         if (player != minecraft.player) {
@@ -173,6 +177,10 @@ public class ClientTickHandler {
             if (!initHoliday || MekanismClient.ticksPassed % 1200 == 0) {
                 HolidayManager.check(Minecraft.getInstance().player);
                 initHoliday = true;
+            }
+
+            if (minecraft.world.getGameTime() - lastScrollTime > 20) {
+                scrollDelta = 0;
             }
 
             Mekanism.radiationManager.tickClient(minecraft.player);
@@ -297,7 +305,7 @@ public class ClientTickHandler {
             }
 
             if (MekanismConfig.client.enablePlayerSounds.get() && SoundHandler.radiationSoundMap.isEmpty()) {
-                for (RadiationScale scale : RadiationScale.values()) {
+                for (RadiationScale scale : EnumUtils.RADIATION_SCALES) {
                     if (scale != RadiationScale.NONE) {
                         GeigerSound sound = GeigerSound.create(minecraft.player, scale);
                         SoundHandler.radiationSoundMap.put(scale, sound);
@@ -311,10 +319,15 @@ public class ClientTickHandler {
     @SubscribeEvent
     public void onMouseEvent(MouseScrollEvent event) {
         if (MekanismConfig.client.allowModeScroll.get() && minecraft.player != null && minecraft.player.isSneaking()) {
-            int shift = (int) event.getScrollDelta();
-            if (shift != 0 && IModeItem.isModeItem(minecraft.player, EquipmentSlotType.MAINHAND)) {
-                RenderTickHandler.modeSwitchTimer = 100;
-                Mekanism.packetHandler.sendToServer(new PacketModeChange(EquipmentSlotType.MAINHAND, shift));
+            if (event.getScrollDelta() != 0 && IModeItem.isModeItem(minecraft.player, EquipmentSlotType.MAINHAND)) {
+                lastScrollTime = minecraft.world.getGameTime();
+                scrollDelta += event.getScrollDelta();
+                int shift = (int) scrollDelta;
+                scrollDelta %= 1;
+                if (shift != 0) {
+                    RenderTickHandler.modeSwitchTimer = 100;
+                    Mekanism.packetHandler.sendToServer(new PacketModeChange(EquipmentSlotType.MAINHAND, shift));
+                }
                 event.setCanceled(true);
             }
         }

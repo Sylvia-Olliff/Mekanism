@@ -8,18 +8,19 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import mekanism.api.NBTConstants;
-import mekanism.api.block.IHasTileEntity;
 import mekanism.api.providers.IBlockProvider;
-import mekanism.api.sustained.ISustainedData;
 import mekanism.common.block.BlockCardboardBox;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeUpgradeSupport;
 import mekanism.common.block.attribute.Attributes.AttributeInventory;
 import mekanism.common.block.attribute.Attributes.AttributeRedstone;
 import mekanism.common.block.attribute.Attributes.AttributeSecurity;
+import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.tile.base.SubstanceType;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.interfaces.ISideConfiguration;
+import mekanism.common.tile.interfaces.ISustainedData;
+import mekanism.common.util.EnumUtils;
 import net.minecraft.block.Block;
 import net.minecraft.data.loot.BlockLootTables;
 import net.minecraft.nbt.CompoundNBT;
@@ -36,10 +37,6 @@ import net.minecraftforge.items.IItemHandler;
 
 public abstract class BaseBlockLootTables extends BlockLootTables {
 
-    /**
-     * Cached value of {@link SubstanceType#values()}. DO NOT MODIFY THIS LIST.
-     */
-    private static final SubstanceType[] SUBSTANCE_TYPES = SubstanceType.values();
     private final Set<Block> knownBlocks = new ObjectOpenHashSet<>();
     private final Set<Block> toSkip = new ObjectOpenHashSet<>();
 
@@ -98,7 +95,7 @@ public abstract class BaseBlockLootTables extends BlockLootTables {
             boolean hasData = false;
             @Nullable
             TileEntity tile = null;
-            if (block instanceof IHasTileEntity<?>) {
+            if (block instanceof IHasTileEntity) {
                 tile = ((IHasTileEntity<?>) block).getTileType().create();
             }
             if (Attribute.has(block, AttributeSecurity.class)) {
@@ -132,7 +129,7 @@ public abstract class BaseBlockLootTables extends BlockLootTables {
             }
             if (tile instanceof TileEntityMekanism) {
                 TileEntityMekanism tileEntity = (TileEntityMekanism) tile;
-                for (SubstanceType type : SUBSTANCE_TYPES) {
+                for (SubstanceType type : EnumUtils.SUBSTANCES) {
                     if (tileEntity.handles(type)) {
                         List<? extends INBTSerializable<CompoundNBT>> list = type.getContainers(tileEntity);
                         if (list.size() > 0) {

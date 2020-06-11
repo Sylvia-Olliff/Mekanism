@@ -1,7 +1,5 @@
 package mekanism.client.render;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -10,11 +8,13 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import mekanism.api.RelativeSide;
 import mekanism.api.energy.IEnergyContainer;
 import mekanism.api.math.FloatingLong;
-import mekanism.api.transmitters.TransmissionType;
 import mekanism.client.MekanismClient;
+import mekanism.client.MekanismKeyHandler;
 import mekanism.client.gui.GuiUtils;
 import mekanism.client.gui.element.bar.GuiBar;
 import mekanism.client.render.MekanismRenderer.Model3D;
@@ -33,11 +33,15 @@ import mekanism.common.item.gear.ItemFlamethrower;
 import mekanism.common.item.gear.ItemMekaSuitArmor;
 import mekanism.common.item.interfaces.IItemHUDProvider;
 import mekanism.common.item.interfaces.IModeItem;
+import mekanism.common.item.interfaces.IRadialModeItem;
+import mekanism.common.item.interfaces.IRadialSelectorEnum;
 import mekanism.common.lib.Color;
 import mekanism.common.lib.effect.BoltEffect;
 import mekanism.common.lib.math.Pos3D;
 import mekanism.common.lib.radiation.RadiationManager;
 import mekanism.common.lib.radiation.RadiationManager.RadiationScale;
+import mekanism.common.lib.transmitter.TransmissionType;
+import mekanism.common.network.PacketRadialModeChange;
 import mekanism.common.registries.MekanismParticleTypes;
 import mekanism.common.tile.TileEntityBoundingBlock;
 import mekanism.common.tile.component.TileComponentConfig;
@@ -83,6 +87,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class RenderTickHandler {
 
+    public Minecraft minecraft = Minecraft.getInstance();
+
     private static final ResourceLocation POWER_BAR = MekanismUtils.getResource(ResourceType.GUI_BAR, "horizontal_power_long.png");
     private static final Map<Direction, Map<TransmissionType, Model3D>> cachedOverlays = new EnumMap<>(Direction.class);
     private static final EquipmentSlotType[] EQUIPMENT_ORDER = new EquipmentSlotType[]{EquipmentSlotType.OFFHAND, EquipmentSlotType.MAINHAND,
@@ -93,8 +99,9 @@ public class RenderTickHandler {
 
     private static HUDRenderer hudRenderer = new HUDRenderer();
 
+    private RadialSelectorRenderer<?> selectorRenderer;
+
     public static int modeSwitchTimer = 0;
-    public Minecraft minecraft = Minecraft.getInstance();
     public static double prevRadiation = 0;
 
     private static final BoltRenderer boltRenderer = new BoltRenderer();
@@ -121,7 +128,7 @@ public class RenderTickHandler {
     }
 
     @SubscribeEvent
-    public void renderOverlay(RenderGameOverlayEvent.Post event) {
+    public void renderOverlay(RenderGameOverlayEvent.Pre event) {
         if (event.getType() == ElementType.ARMOR) {
             FloatingLong capacity = FloatingLong.ZERO, stored = FloatingLong.ZERO;
             for (ItemStack stack : minecraft.player.inventory.armorInventory) {
@@ -142,7 +149,12 @@ public class RenderTickHandler {
                 minecraft.getTextureManager().bindTexture(ForgeIngameGui.GUI_ICONS_LOCATION);
                 ForgeIngameGui.left_height += 8;
             }
-        } else if (event.getType() == ElementType.HOTBAR) {
+        }
+    }
+
+    @SubscribeEvent
+    public void renderOverlay(RenderGameOverlayEvent.Post event) {
+        if (event.getType() == ElementType.HOTBAR) {
             if (!minecraft.player.isSpectator() && MekanismConfig.client.enableHUD.get() && MekanismClient.renderHUD) {
                 int count = 0;
                 Map<EquipmentSlotType, List<ITextComponent>> renderStrings = new LinkedHashMap<>();
@@ -173,9 +185,49 @@ public class RenderTickHandler {
                 }
                 RenderSystem.popMatrix();
 
-                hudRenderer.renderHUD(event.getPartialTicks());
+                if (minecraft.player.getItemStackFromSlot(EquipmentSlotType.HEAD).getItem() instanceof ItemMekaSuitArmor) {
+                    hudRenderer.renderHUD(event.getPartialTicks());
+                }
+            }
+
+            if (minecraft.world != null && minecraft.currentScreen == null) {
+                ItemStack stack = minecraft.player.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
+                if (MekanismKeyHandler.handModeSwitchKey.isKeyDown() && stack.getItem() instanceof IRadialModeItem) {
+                    updateSelectorRenderer((IRadialModeItem<?>) stack.getItem());
+                    minecraft.mouseHelper.ungrabMouse();
+                    selectorRenderer.render(event.getWindow(), event.getPartialTicks());
+                } else {
+                    if (selectorRenderer != null) {
+                        selectorRenderer.updateSelection();
+                        selectorRenderer = null;
+                    }
+                    minecraft.mouseHelper.grabMouse();
+                }
             }
         }
+    }
+
+    private <TYPE extends Enum<TYPE> & IRadialSelectorEnum<TYPE>> void updateSelectorRenderer(IRadialModeItem<TYPE> modeItem) {
+        Class<TYPE> modeClass = modeItem.getModeClass();
+        if (selectorRenderer == null || selectorRenderer.getEnumClass() != modeClass) {
+            selectorRenderer = getRadialSelectorRenderer(modeClass);
+        }
+    }
+
+    private <TYPE extends Enum<TYPE> & IRadialSelectorEnum<TYPE>> RadialSelectorRenderer<TYPE> getRadialSelectorRenderer(Class<TYPE> modeClass) {
+        return new RadialSelectorRenderer<>(modeClass, () -> {
+            if (minecraft.player != null) {
+                ItemStack s = minecraft.player.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
+                if (s.getItem() instanceof IRadialModeItem) {
+                    return ((IRadialModeItem<TYPE>) s.getItem()).getMode(s);
+                }
+            }
+            return modeClass.getEnumConstants()[0];
+        }, type -> {
+            if (minecraft.player != null) {
+                Mekanism.packetHandler.sendToServer(new PacketRadialModeChange(EquipmentSlotType.MAINHAND, type.ordinal()));
+            }
+        });
     }
 
     @SubscribeEvent
@@ -318,7 +370,7 @@ public class RenderTickHandler {
                 }
             }
             profiler.startSection(ProfilerConstants.CONFIGURABLE_MACHINE);
-            ConfiguratorMode state = ((ItemConfigurator) stack.getItem()).getState(stack);
+            ConfiguratorMode state = ((ItemConfigurator) stack.getItem()).getMode(stack);
             if (state.isConfigurating()) {
                 TransmissionType type = Objects.requireNonNull(state.getTransmission(), "Configurating state requires transmission type");
                 TileEntity tile = MekanismUtils.getTileEntity(world, pos);
@@ -392,14 +444,7 @@ public class RenderTickHandler {
 
         Model3D toReturn = new Model3D();
         toReturn.setTexture(MekanismRenderer.overlays.get(type));
-
-        if (cachedOverlays.containsKey(side)) {
-            cachedOverlays.get(side).put(type, toReturn);
-        } else {
-            Map<TransmissionType, Model3D> map = new EnumMap<>(TransmissionType.class);
-            map.put(type, toReturn);
-            cachedOverlays.put(side, map);
-        }
+        cachedOverlays.computeIfAbsent(side, s -> new EnumMap<>(TransmissionType.class)).putIfAbsent(type, toReturn);
 
         switch (side) {
             case DOWN:

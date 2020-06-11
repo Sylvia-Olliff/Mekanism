@@ -10,9 +10,9 @@ import mekanism.api.Action;
 import mekanism.api.DataHandlerUtils;
 import mekanism.api.NBTConstants;
 import mekanism.api.annotations.FieldsAreNonnullByDefault;
-import mekanism.api.block.IHasTileEntity;
 import mekanism.api.fluid.IExtendedFluidTank;
 import mekanism.api.fluid.IMekanismFluidHandler;
+import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.capabilities.fluid.BasicFluidTank;
 import mekanism.common.tile.base.SubstanceType;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -73,7 +73,7 @@ public class FluidRecipeData implements RecipeUpgradeData<FluidRecipeData> {
         } else if (item instanceof BlockItem) {
             TileEntityMekanism tile = null;
             Block block = ((BlockItem) item).getBlock();
-            if (block instanceof IHasTileEntity<?>) {
+            if (block instanceof IHasTileEntity) {
                 TileEntity tileEntity = ((IHasTileEntity<?>) block).getTileType().create();
                 if (tileEntity instanceof TileEntityMekanism) {
                     tile = (TileEntityMekanism) tileEntity;

@@ -5,12 +5,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import mekanism.api.DataHandlerUtils;
 import mekanism.api.NBTConstants;
-import mekanism.api.block.IHasTileEntity;
-import mekanism.api.sustained.ISustainedData;
-import mekanism.api.sustained.ISustainedInventory;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeStateFacing;
 import mekanism.common.block.attribute.Attributes.AttributeComparator;
+import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.block.states.BlockStateHelper;
 import mekanism.common.block.states.IStateFluidLoggable;
 import mekanism.common.lib.security.ISecurityItem;
@@ -21,6 +19,9 @@ import mekanism.common.tile.interfaces.IBoundingBlock;
 import mekanism.common.tile.interfaces.IComparatorSupport;
 import mekanism.common.tile.interfaces.IRedstoneControl.RedstoneControl;
 import mekanism.common.tile.interfaces.ISideConfiguration;
+import mekanism.common.tile.interfaces.ISustainedData;
+import mekanism.common.tile.interfaces.ISustainedInventory;
+import mekanism.common.util.EnumUtils;
 import mekanism.common.util.ItemDataUtils;
 import mekanism.common.util.MekanismUtils;
 import net.minecraft.block.Block;
@@ -81,7 +82,7 @@ public abstract class BlockMekanism extends Block {
         if (tile.supportsRedstone()) {
             ItemDataUtils.setInt(itemStack, NBTConstants.CONTROL_TYPE, tile.getControlType().ordinal());
         }
-        for (SubstanceType type : SubstanceType.values()) {
+        for (SubstanceType type : EnumUtils.SUBSTANCES) {
             if (tile.handles(type)) {
                 ItemDataUtils.setList(itemStack, type.getContainerTag(), DataHandlerUtils.writeContainers(type.getContainers(tile)));
             }
@@ -94,12 +95,12 @@ public abstract class BlockMekanism extends Block {
 
     @Override
     public boolean hasTileEntity(BlockState state) {
-        return this instanceof IHasTileEntity<?>;
+        return this instanceof IHasTileEntity;
     }
 
     @Override
     public TileEntity createTileEntity(@Nonnull BlockState state, @Nonnull IBlockReader world) {
-        if (this instanceof IHasTileEntity<?>) {
+        if (this instanceof IHasTileEntity) {
             return ((IHasTileEntity<?>) this).getTileType().create();
         }
         return null;
@@ -176,7 +177,7 @@ public abstract class BlockMekanism extends Block {
             config.getConfig().read(ItemDataUtils.getDataMap(stack));
             config.getEjector().read(ItemDataUtils.getDataMap(stack));
         }
-        for (SubstanceType type : SubstanceType.values()) {
+        for (SubstanceType type : EnumUtils.SUBSTANCES) {
             if (type.canHandle(tile)) {
                 DataHandlerUtils.readContainers(type.getContainers(tile), ItemDataUtils.getList(stack, type.getContainerTag()));
             }

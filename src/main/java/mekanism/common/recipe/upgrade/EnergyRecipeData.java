@@ -10,11 +10,11 @@ import mekanism.api.Action;
 import mekanism.api.DataHandlerUtils;
 import mekanism.api.NBTConstants;
 import mekanism.api.annotations.FieldsAreNonnullByDefault;
-import mekanism.api.block.IHasTileEntity;
 import mekanism.api.energy.IEnergyContainer;
 import mekanism.api.energy.IMekanismStrictEnergyHandler;
 import mekanism.api.energy.IStrictEnergyHandler;
 import mekanism.api.math.FloatingLong;
+import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.capabilities.energy.BasicEnergyContainer;
 import mekanism.common.tile.base.SubstanceType;
@@ -73,7 +73,7 @@ public class EnergyRecipeData implements RecipeUpgradeData<EnergyRecipeData> {
         } else if (item instanceof BlockItem) {
             TileEntityMekanism tile = null;
             Block block = ((BlockItem) item).getBlock();
-            if (block instanceof IHasTileEntity<?>) {
+            if (block instanceof IHasTileEntity) {
                 TileEntity tileEntity = ((IHasTileEntity<?>) block).getTileType().create();
                 if (tileEntity instanceof TileEntityMekanism) {
                     tile = (TileEntityMekanism) tileEntity;

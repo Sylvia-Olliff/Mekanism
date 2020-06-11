@@ -14,7 +14,6 @@ import mekanism.api.DataHandlerUtils;
 import mekanism.api.IMekWrench;
 import mekanism.api.NBTConstants;
 import mekanism.api.Upgrade;
-import mekanism.api.block.IHasTileEntity;
 import mekanism.api.chemical.gas.IGasTank;
 import mekanism.api.chemical.infuse.IInfusionTank;
 import mekanism.api.chemical.pigment.IPigmentTank;
@@ -30,7 +29,6 @@ import mekanism.api.inventory.IInventorySlot;
 import mekanism.api.inventory.IMekanismInventory;
 import mekanism.api.math.FloatingLong;
 import mekanism.api.providers.IBlockProvider;
-import mekanism.api.sustained.ISustainedInventory;
 import mekanism.api.text.TextComponentUtil;
 import mekanism.client.sound.SoundHandler;
 import mekanism.common.Mekanism;
@@ -44,6 +42,7 @@ import mekanism.common.block.attribute.AttributeUpgradeable;
 import mekanism.common.block.attribute.Attributes.AttributeComparator;
 import mekanism.common.block.attribute.Attributes.AttributeRedstone;
 import mekanism.common.block.attribute.Attributes.AttributeSecurity;
+import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.capabilities.energy.MachineEnergyContainer;
 import mekanism.common.capabilities.heat.BasicHeatCapacitor;
@@ -84,6 +83,7 @@ import mekanism.common.tile.component.TileComponentConfig;
 import mekanism.common.tile.component.TileComponentSecurity;
 import mekanism.common.tile.component.TileComponentUpgrade;
 import mekanism.common.tile.interfaces.IComparatorSupport;
+import mekanism.common.tile.interfaces.ISustainedInventory;
 import mekanism.common.tile.interfaces.ITierUpgradable;
 import mekanism.common.tile.interfaces.ITileActive;
 import mekanism.common.tile.interfaces.ITileDirectional;
@@ -96,6 +96,7 @@ import mekanism.common.tile.interfaces.chemical.IPigmentTile;
 import mekanism.common.tile.interfaces.chemical.ISlurryTile;
 import mekanism.common.upgrade.IUpgradeData;
 import mekanism.common.util.CapabilityUtils;
+import mekanism.common.util.EnumUtils;
 import mekanism.common.util.MekanismUtils;
 import mekanism.common.util.NBTUtils;
 import mekanism.common.util.SecurityUtils;
@@ -445,7 +446,7 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
             ItemStack stack = player.getHeldItemMainhand();
             if (isDirectional() && !stack.isEmpty() && stack.getItem() instanceof ItemConfigurator) {
                 ItemConfigurator configurator = (ItemConfigurator) stack.getItem();
-                if (configurator.getState(stack) == ItemConfigurator.ConfiguratorMode.ROTATE) {
+                if (configurator.getMode(stack) == ItemConfigurator.ConfiguratorMode.ROTATE) {
                     return ActionResultType.PASS;
                 }
             }
@@ -556,7 +557,7 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
         if (hasInventory() && persistInventory()) {
             DataHandlerUtils.readContainers(getInventorySlots(null), nbtTags.getList(NBTConstants.ITEMS, NBT.TAG_COMPOUND));
         }
-        for (SubstanceType type : SubstanceType.values()) {
+        for (SubstanceType type : EnumUtils.SUBSTANCES) {
             if (type.canHandle(this) && persists(type)) {
                 type.read(this, nbtTags);
             }
@@ -569,7 +570,7 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
 
     @Nonnull
     @Override
-    public CompoundNBT write(CompoundNBT nbtTags) {
+    public CompoundNBT write(@Nonnull CompoundNBT nbtTags) {
         super.write(nbtTags);
         nbtTags.putBoolean(NBTConstants.REDSTONE, redstone);
         for (ITileComponent component : components) {
@@ -582,7 +583,7 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
             nbtTags.put(NBTConstants.ITEMS, DataHandlerUtils.writeContainers(getInventorySlots(null)));
         }
 
-        for (SubstanceType type : SubstanceType.values()) {
+        for (SubstanceType type : EnumUtils.SUBSTANCES) {
             if (type.canHandle(this) && persists(type)) {
                 type.write(this, nbtTags);
             }
@@ -650,7 +651,7 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
             List<IEnergyContainer> energyContainers = getEnergyContainers(null);
             for (IEnergyContainer energyContainer : energyContainers) {
                 container.track(SyncableFloatingLong.create(energyContainer::getEnergy, energyContainer::setEnergy));
-                if (energyContainer instanceof MachineEnergyContainer<?>) {
+                if (energyContainer instanceof MachineEnergyContainer) {
                     MachineEnergyContainer<?> machineEnergy = (MachineEnergyContainer<?>) energyContainer;
                     if (supportsUpgrades() || machineEnergy.adjustableRates()) {
                         container.track(SyncableFloatingLong.create(machineEnergy::getMaxEnergy, machineEnergy::setMaxEnergy));
@@ -797,13 +798,13 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
     public void recalculateUpgrades(Upgrade upgrade) {
         if (upgrade == Upgrade.SPEED) {
             for (IEnergyContainer energyContainer : getEnergyContainers(null)) {
-                if (energyContainer instanceof MachineEnergyContainer<?>) {
+                if (energyContainer instanceof MachineEnergyContainer) {
                     ((MachineEnergyContainer<?>) energyContainer).updateEnergyPerTick();
                 }
             }
         } else if (upgrade == Upgrade.ENERGY) {
             for (IEnergyContainer energyContainer : getEnergyContainers(null)) {
-                if (energyContainer instanceof MachineEnergyContainer<?>) {
+                if (energyContainer instanceof MachineEnergyContainer) {
                     MachineEnergyContainer<?> machineEnergy = (MachineEnergyContainer<?>) energyContainer;
                     machineEnergy.updateMaxEnergy();
                     machineEnergy.updateEnergyPerTick();

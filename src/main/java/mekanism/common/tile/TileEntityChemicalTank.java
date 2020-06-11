@@ -24,10 +24,9 @@ import mekanism.api.chemical.slurry.Slurry;
 import mekanism.api.chemical.slurry.SlurryStack;
 import mekanism.api.math.MathUtils;
 import mekanism.api.providers.IBlockProvider;
-import mekanism.api.sustained.ISustainedData;
 import mekanism.api.text.IHasTextComponent;
 import mekanism.api.text.ILangEntry;
-import mekanism.api.transmitters.TransmissionType;
+import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.MekanismLang;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.capabilities.chemical.ChemicalTankChemicalTank;
@@ -48,6 +47,7 @@ import mekanism.common.tile.component.TileComponentEjector;
 import mekanism.common.tile.component.config.ConfigInfo;
 import mekanism.common.tile.interfaces.IHasGasMode;
 import mekanism.common.tile.interfaces.ISideConfiguration;
+import mekanism.common.tile.interfaces.ISustainedData;
 import mekanism.common.upgrade.ChemicalTankUpgradeData;
 import mekanism.common.upgrade.IUpgradeData;
 import mekanism.common.util.ChemicalUtil;
@@ -211,7 +211,7 @@ public class TileEntityChemicalTank extends TileEntityMekanism implements ISideC
 
     @Nonnull
     @Override
-    public CompoundNBT write(CompoundNBT nbtTags) {
+    public CompoundNBT write(@Nonnull CompoundNBT nbtTags) {
         super.write(nbtTags);
         nbtTags.putInt(NBTConstants.DUMP_MODE, dumping.ordinal());
         return nbtTags;

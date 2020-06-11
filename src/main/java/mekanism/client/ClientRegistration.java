@@ -1,17 +1,16 @@
 package mekanism.client;
 
+import com.google.common.collect.Table.Cell;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Map.Entry;
-import com.google.common.collect.Table.Cell;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import mekanism.api.block.IColoredBlock;
 import mekanism.api.text.EnumColor;
 import mekanism.client.gui.GuiBoilerStats;
+import mekanism.client.gui.GuiChemicalTank;
 import mekanism.client.gui.GuiDynamicTank;
 import mekanism.client.gui.GuiEnergyCube;
 import mekanism.client.gui.GuiFluidTank;
-import mekanism.client.gui.GuiChemicalTank;
 import mekanism.client.gui.GuiInductionMatrix;
 import mekanism.client.gui.GuiLaserAmplifier;
 import mekanism.client.gui.GuiLaserTractorBeam;
@@ -115,6 +114,7 @@ import mekanism.client.render.transmitter.RenderPressurizedTube;
 import mekanism.client.render.transmitter.RenderThermodynamicConductor;
 import mekanism.client.render.transmitter.RenderUniversalCable;
 import mekanism.common.Mekanism;
+import mekanism.common.block.interfaces.IColoredBlock;
 import mekanism.common.item.ItemProcessedResource;
 import mekanism.common.registration.impl.BlockRegistryObject;
 import mekanism.common.registration.impl.FluidRegistryObject;
@@ -387,7 +387,7 @@ public class ClientRegistration {
                   if (tintIndex == 1 && pos != null) {
                       TileEntityLogisticalTransporter transporter = MekanismUtils.getTileEntity(TileEntityLogisticalTransporter.class, world, pos);
                       if (transporter != null) {
-                          EnumColor renderColor = transporter.getRenderColor();
+                          EnumColor renderColor = transporter.getColor();
                           if (renderColor != null) {
                               return MekanismRenderer.getColorARGB(renderColor, 1);
                           }
@@ -419,7 +419,7 @@ public class ClientRegistration {
         //Note: This includes any modded mobs that have vanilla's BipedArmorLayer added to them
         for (Entry<EntityType<?>, EntityRenderer<?>> entry : entityRenderManager.renderers.entrySet()) {
             EntityRenderer<?> renderer = entry.getValue();
-            if (renderer instanceof LivingRenderer<?, ?>) {
+            if (renderer instanceof LivingRenderer) {
                 addCustomArmorLayer((LivingRenderer) renderer);
             }
         }

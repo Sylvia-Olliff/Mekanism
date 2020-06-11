@@ -13,8 +13,7 @@ import mekanism.api.Action;
 import mekanism.api.IConfigCardAccess.ISpecialConfigData;
 import mekanism.api.NBTConstants;
 import mekanism.api.RelativeSide;
-import mekanism.api.sustained.ISustainedData;
-import mekanism.api.transmitters.TransmissionType;
+import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
@@ -31,6 +30,7 @@ import mekanism.common.lib.HashList;
 import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.tile.component.TileComponentConfig;
 import mekanism.common.tile.component.TileComponentEjector;
+import mekanism.common.tile.interfaces.ISustainedData;
 import mekanism.common.tile.interfaces.ITileFilterHolder;
 import mekanism.common.tile.machine.TileEntityOredictionificator.OredictionificatorFilter;
 import mekanism.common.tile.prefab.TileEntityConfigurableMachine;
@@ -142,7 +142,7 @@ public class TileEntityOredictionificator extends TileEntityConfigurableMachine 
 
     @Nonnull
     @Override
-    public CompoundNBT write(CompoundNBT nbtTags) {
+    public CompoundNBT write(@Nonnull CompoundNBT nbtTags) {
         super.write(nbtTags);
         getConfigurationData(nbtTags);
         return nbtTags;

@@ -1,15 +1,15 @@
 package mekanism.common.block.transmitter;
 
-import mekanism.api.block.IHasTileEntity;
 import mekanism.common.block.attribute.AttributeTier;
+import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.block.interfaces.ITypeBlock;
 import mekanism.common.content.blocktype.BlockType;
 import mekanism.common.registries.MekanismTileEntityTypes;
 import mekanism.common.tier.TransporterTier;
-import mekanism.common.tile.transmitter.TileEntityLogisticalTransporter;
+import mekanism.common.tile.transmitter.TileEntityLogisticalTransporterBase;
 import net.minecraft.tileentity.TileEntityType;
 
-public class BlockLogisticalTransporter extends BlockLargeTransmitter implements ITypeBlock, IHasTileEntity<TileEntityLogisticalTransporter> {
+public class BlockLogisticalTransporter extends BlockLargeTransmitter implements ITypeBlock, IHasTileEntity<TileEntityLogisticalTransporterBase> {
 
     private final TransporterTier tier;
 
@@ -23,7 +23,7 @@ public class BlockLogisticalTransporter extends BlockLargeTransmitter implements
     }
 
     @Override
-    public TileEntityType<TileEntityLogisticalTransporter> getTileType() {
+    public TileEntityType<TileEntityLogisticalTransporterBase> getTileType() {
         switch (tier) {
             case ADVANCED:
                 return MekanismTileEntityTypes.ADVANCED_LOGISTICAL_TRANSPORTER.getTileEntityType();

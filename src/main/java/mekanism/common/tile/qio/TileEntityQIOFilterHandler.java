@@ -7,7 +7,6 @@ import mekanism.api.IConfigCardAccess.ISpecialConfigData;
 import mekanism.api.NBTConstants;
 import mekanism.api.Upgrade;
 import mekanism.api.providers.IBlockProvider;
-import mekanism.api.sustained.ISustainedData;
 import mekanism.common.content.filter.BaseFilter;
 import mekanism.common.content.filter.IFilter;
 import mekanism.common.content.qio.filter.QIOFilter;
@@ -15,6 +14,7 @@ import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.container.sync.list.SyncableFilterList;
 import mekanism.common.lib.HashList;
 import mekanism.common.tile.interfaces.IHasSortableFilters;
+import mekanism.common.tile.interfaces.ISustainedData;
 import mekanism.common.tile.interfaces.ITileFilterHolder;
 import mekanism.common.util.ItemDataUtils;
 import net.minecraft.item.ItemStack;
@@ -99,7 +99,7 @@ public class TileEntityQIOFilterHandler extends TileEntityQIOComponent implement
 
     @Nonnull
     @Override
-    public CompoundNBT write(CompoundNBT nbtTags) {
+    public CompoundNBT write(@Nonnull CompoundNBT nbtTags) {
         super.write(nbtTags);
         return getConfigurationData(nbtTags);
     }

@@ -11,13 +11,13 @@ import mekanism.api.DataHandlerUtils;
 import mekanism.api.NBTConstants;
 import mekanism.api.annotations.FieldsAreNonnullByDefault;
 import mekanism.api.annotations.NonNull;
-import mekanism.api.block.IHasTileEntity;
 import mekanism.api.inventory.IInventorySlot;
 import mekanism.api.inventory.IMekanismInventory;
-import mekanism.api.sustained.ISustainedInventory;
+import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.inventory.slot.BasicInventorySlot;
 import mekanism.common.item.block.ItemBlockBin;
 import mekanism.common.tile.base.TileEntityMekanism;
+import mekanism.common.tile.interfaces.ISustainedInventory;
 import mekanism.common.util.MekanismUtils;
 import net.minecraft.block.Block;
 import net.minecraft.item.BlockItem;
@@ -76,7 +76,7 @@ public class ItemRecipeData implements RecipeUpgradeData<ItemRecipeData> {
         } else if (item instanceof BlockItem) {
             TileEntityMekanism tile = null;
             Block block = ((BlockItem) item).getBlock();
-            if (block instanceof IHasTileEntity<?>) {
+            if (block instanceof IHasTileEntity) {
                 TileEntity tileEntity = ((IHasTileEntity<?>) block).getTileType().create();
                 if (tileEntity instanceof TileEntityMekanism) {
                     tile = (TileEntityMekanism) tileEntity;

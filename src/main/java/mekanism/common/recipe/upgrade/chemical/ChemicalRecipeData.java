@@ -12,11 +12,11 @@ import mekanism.api.DataHandlerUtils;
 import mekanism.api.NBTConstants;
 import mekanism.api.annotations.FieldsAreNonnullByDefault;
 import mekanism.api.annotations.NonNull;
-import mekanism.api.block.IHasTileEntity;
 import mekanism.api.chemical.Chemical;
 import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.chemical.IChemicalHandler;
 import mekanism.api.chemical.IChemicalTank;
+import mekanism.common.block.interfaces.IHasTileEntity;
 import mekanism.common.recipe.upgrade.RecipeUpgradeData;
 import mekanism.common.tile.base.SubstanceType;
 import mekanism.common.tile.base.TileEntityMekanism;
@@ -87,7 +87,7 @@ public abstract class ChemicalRecipeData<CHEMICAL extends Chemical<CHEMICAL>, ST
         } else if (stack.getItem() instanceof BlockItem) {
             TileEntityMekanism tile = null;
             Block block = ((BlockItem) stack.getItem()).getBlock();
-            if (block instanceof IHasTileEntity<?>) {
+            if (block instanceof IHasTileEntity) {
                 TileEntity tileEntity = ((IHasTileEntity<?>) block).getTileType().create();
                 if (tileEntity instanceof TileEntityMekanism) {
                     tile = (TileEntityMekanism) tileEntity;

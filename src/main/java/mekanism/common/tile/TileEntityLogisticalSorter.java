@@ -2,13 +2,11 @@ package mekanism.common.tile;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.Map;
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import mekanism.api.IConfigCardAccess.ISpecialConfigData;
 import mekanism.api.NBTConstants;
 import mekanism.api.RelativeSide;
-import mekanism.api.sustained.ISustainedData;
 import mekanism.api.text.EnumColor;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
@@ -30,9 +28,9 @@ import mekanism.common.lib.inventory.TransitRequest.TransitResponse;
 import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.interfaces.IHasSortableFilters;
-import mekanism.common.tile.interfaces.ILogisticalTransporter;
+import mekanism.common.tile.interfaces.ISustainedData;
 import mekanism.common.tile.interfaces.ITileFilterHolder;
-import mekanism.common.util.CapabilityUtils;
+import mekanism.common.tile.transmitter.TileEntityLogisticalTransporterBase;
 import mekanism.common.util.InventoryUtils;
 import mekanism.common.util.ItemDataUtils;
 import mekanism.common.util.MekanismUtils;
@@ -124,9 +122,8 @@ public class TileEntityLogisticalSorter extends TileEntityMekanism implements IS
     }
 
     private TransitResponse emitItemToTransporter(TileEntity front, TransitRequest request, EnumColor filterColor, int min) {
-        Optional<ILogisticalTransporter> capability = MekanismUtils.toOptional(CapabilityUtils.getCapability(front, Capabilities.LOGISTICAL_TRANSPORTER_CAPABILITY, getOppositeDirection()));
-        if (capability.isPresent()) {
-            ILogisticalTransporter transporter = capability.get();
+        if (front instanceof TileEntityLogisticalTransporterBase) {
+            TileEntityLogisticalTransporterBase transporter = (TileEntityLogisticalTransporterBase) front;
             if (roundRobin) {
                 return transporter.insertRR(this, request, filterColor, true, min);
             }
@@ -137,7 +134,7 @@ public class TileEntityLogisticalSorter extends TileEntityMekanism implements IS
 
     @Nonnull
     @Override
-    public CompoundNBT write(CompoundNBT nbtTags) {
+    public CompoundNBT write(@Nonnull CompoundNBT nbtTags) {
         super.write(nbtTags);
         return getConfigurationData(nbtTags);
     }
@@ -191,6 +188,7 @@ public class TileEntityLogisticalSorter extends TileEntityMekanism implements IS
         return TransporterUtils.isValidAcceptorOnSide(tile, getOppositeDirection());
     }
 
+    @Nonnull
     public TransitResponse sendHome(TransitRequest request) {
         TileEntity back = MekanismUtils.getTileEntity(getWorld(), pos.offset(getOppositeDirection()));
         return request.addToInventory(back, getOppositeDirection(), true);
