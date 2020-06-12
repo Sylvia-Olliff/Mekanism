@@ -14,7 +14,7 @@ public class GuiResearchTerminal extends GuiMekanismTile<TileEntityResearchTermi
 
     public GuiResearchTerminal(MekanismTileContainer<TileEntityResearchTerminal> container, PlayerInventory inv, ITextComponent title) {
         super(container, inv, title);
-        ySize += 42;
+        ySize += 8;
         dynamicSlots = true;
     }
 

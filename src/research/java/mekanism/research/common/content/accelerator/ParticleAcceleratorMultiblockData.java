@@ -35,7 +35,7 @@ public class ParticleAcceleratorMultiblockData extends MultiblockData {
         isOperating = false;
         ownerId = tile.getSecurity().getOwnerUUID();
 
-        // TODO: Set the Tier based on the TE passed in here.
+        tier = tile.getTier();
         powerConsumptionRate = tier.getPowerConsumption().copy().multiply(tile.getStructure().size());
         researchGenerationRate = tier.getResearchGeneration() * tile.getStructure().size();
     }

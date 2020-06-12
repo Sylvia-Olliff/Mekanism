@@ -23,6 +23,7 @@ public class ResearchBlockTypes {
     // Research Terminal
     public static final BlockTypeTile<TileEntityResearchTerminal> RESEARCH_TERMINAL = BlockTileBuilder
             .createBlock(() -> ResearchTileEntityTypes.RESEARCH_TERMINAL, ResearchLang.DESCRIPTION_RESEARCH_TERMINAL)
+            .with(new AttributeStateFacing())
             .withGui(() -> ResearchContainerTypes.RESEARCH_TERMINAL)
             .withCustomShape(BlockShapes.RESEARCH_TERMINAL)
             .build();

@@ -12,6 +12,8 @@ import mekanism.common.lib.multiblock.FormationProtocol.CasingType;
 import mekanism.common.lib.multiblock.FormationProtocol.FormationResult;
 import mekanism.research.common.MekanismResearch;
 import mekanism.research.common.registries.ResearchBlockTypes;
+import mekanism.research.common.tier.AcceleratorTier;
+import mekanism.research.common.tile.accelerator.TileEntityParticleAcceleratorCasing;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.tileentity.TileEntity;
@@ -46,6 +48,7 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
         int minZ = min.getZ();
         int maxX = max.getX();
         int maxZ = max.getZ();
+        AcceleratorTier firstTier = null;
 
         for (int x = min.getX(); x < max.getX(); x++) {
             for (int z = min.getZ(); z < max.getZ(); z++) {
@@ -58,22 +61,34 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
                     }
                 }
                 else if (MekanismResearch.particleAcceleratorManager.isCompatible((TileEntity) tile)) {
-                    if (tile instanceof IMultiblock) {
+                    if (tile instanceof TileEntityParticleAcceleratorCasing) { // TODO: Update to include Port TE
+                        AcceleratorTier currentTier = ((TileEntityParticleAcceleratorCasing) tile).getTier();
+
+                        if (firstTier == null)
+                            firstTier = currentTier;
+                        else
+                        {
+                            if (currentTier != firstTier)
+                                return FormationResult.FAIL; // TODO: Add Text message for multiblock failing if all components are not the same tier
+                        }
+
                         IMultiblock<ParticleAcceleratorMultiblockData> multiblockTile = (IMultiblock<ParticleAcceleratorMultiblockData>) tile;
                         UUID uuid = multiblockTile.getCacheID();
                         if (uuid != null && multiblockTile.getManager() == manager && multiblockTile.hasCache()) {
                             manager.updateCache(multiblockTile);
                             ctx.idsFound.add(uuid);
                         }
+                        ctx.locations.add(pos);
+                        CasingType type = getCasingType(pos, world.getBlockState(pos));
+                        if (type == FormationProtocol.CasingType.VALVE) {
+                            IValveHandler.ValveData data = new IValveHandler.ValveData();
+                            data.location = pos;
+                            data.side = getSide(data.location);
+                            ctx.valves.add(data);
+                        }
                     }
-                    ctx.locations.add(pos);
-                    CasingType type = getCasingType(pos, world.getBlockState(pos));
-                    if (type == FormationProtocol.CasingType.VALVE) {
-                        IValveHandler.ValveData data = new IValveHandler.ValveData();
-                        data.location = pos;
-                        data.side = getSide(data.location);
-                        ctx.valves.add(data);
-                    }
+                    else
+                        return FormationResult.FAIL; // If the tile entity found isn't a particle accelerator component, fail
                 }
                 else {
                     return FormationResult.FAIL;

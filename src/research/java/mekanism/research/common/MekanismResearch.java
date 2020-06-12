@@ -19,6 +19,7 @@ import mekanism.research.common.content.accelerator.ParticleAcceleratorMultibloc
 import mekanism.research.common.content.accelerator.ParticleAcceleratorStructureValidator;
 import mekanism.research.common.network.ResearchPacketHandler;
 import mekanism.research.common.registries.ResearchBlocks;
+import mekanism.research.common.registries.ResearchContainerTypes;
 import mekanism.research.common.registries.ResearchTileEntityTypes;
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
@@ -61,6 +62,7 @@ public class MekanismResearch implements IModule {
 
         ResearchBlocks.BLOCKS.register(modEventBus);
         ResearchTileEntityTypes.TILE_ENTITY_TYPES.register(modEventBus);
+        ResearchContainerTypes.CONTAINER_TYPES.register(modEventBus);
 
         //Set our version number to match the mods.toml file, which matches the one in our build.gradle
         versionNumber = new Version(ModLoadingContext.get().getActiveContainer().getModInfo().getVersion());

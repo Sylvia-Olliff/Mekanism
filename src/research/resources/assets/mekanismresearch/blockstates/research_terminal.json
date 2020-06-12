@@ -1,19 +1,19 @@
 {
   "variants": {
     "facing=north": {
-      "model": "mekanismresearch:block/research_terminal"
-    },
-    "facing=south": {
       "model": "mekanismresearch:block/research_terminal",
       "y": 180
     },
+    "facing=south": {
+      "model": "mekanismresearch:block/research_terminal",
+    },
     "facing=east": {
       "model": "mekanismresearch:block/research_terminal",
-      "y": 90
+      "y": -90
     },
     "facing=west": {
       "model": "mekanismresearch:block/research_terminal",
-      "y": -90
+      "y": 90
     }
   }
 }
