@@ -6,7 +6,9 @@ import net.minecraft.util.Util;
 public enum ResearchLang implements ILangEntry {
     // GUI
     POWER("gui", "power"),
-    DESCRIPTION_PARTICLE_ACCELERATOR_CASING("description", "particle_accelerator_casing");
+    RESEARCH("gui", "research"),
+    DESCRIPTION_PARTICLE_ACCELERATOR_CASING("description", "particle_accelerator_casing"),
+    DESCRIPTION_RESEARCH_TERMINAL("description", "research_terminal");
 
     private final String key;
 

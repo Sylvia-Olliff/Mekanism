@@ -23,9 +23,11 @@ public class ResearchLangProvider extends BaseLanguageProvider {
 
     private void addBlocks() {
         add(ResearchBlocks.PARTICLE_ACCELERATOR_CASING, "Particle Accelerator Casing");
+        add(ResearchBlocks.RESEARCH_TERMINAL, "Research Terminal");
     }
 
     private void addMisc() {
         add(ResearchLang.DESCRIPTION_PARTICLE_ACCELERATOR_CASING, "Reinforced Casing that can be used in the Particle Accelerator multiblock");
+        add(ResearchLang.DESCRIPTION_RESEARCH_TERMINAL, "Powered Terminal for viewing research data");
     }
 }

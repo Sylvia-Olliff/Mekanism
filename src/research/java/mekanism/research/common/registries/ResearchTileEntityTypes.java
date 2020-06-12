@@ -3,6 +3,7 @@ package mekanism.research.common.registries;
 import mekanism.common.registration.impl.TileEntityTypeDeferredRegister;
 import mekanism.common.registration.impl.TileEntityTypeRegistryObject;
 import mekanism.research.common.MekanismResearch;
+import mekanism.research.common.tile.TileEntityResearchTerminal;
 import mekanism.research.common.tile.accelerator.TileEntityParticleAcceleratorCasing;
 
 public class ResearchTileEntityTypes {
@@ -10,4 +11,7 @@ public class ResearchTileEntityTypes {
 
     // Particle Accelerator
     public static final TileEntityTypeRegistryObject<TileEntityParticleAcceleratorCasing> PARTICLE_ACCELERATOR_CASING = TILE_ENTITY_TYPES.register(ResearchBlocks.PARTICLE_ACCELERATOR_CASING, TileEntityParticleAcceleratorCasing::new);
+
+    // Research Terminal
+    public static final TileEntityTypeRegistryObject<TileEntityResearchTerminal> RESEARCH_TERMINAL = TILE_ENTITY_TYPES.register(ResearchBlocks.RESEARCH_TERMINAL, TileEntityResearchTerminal::new);
 }

@@ -2,6 +2,7 @@ package mekanism.research.common;
 
 import mekanism.common.Mekanism;
 import mekanism.common.base.IModule;
+import mekanism.common.capabilities.basic.DefaultStorageHelper;
 import mekanism.common.config.MekanismModConfig;
 import mekanism.common.lib.Version;
 import mekanism.common.lib.multiblock.MultiblockManager;
@@ -9,6 +10,8 @@ import mekanism.research.client.ResearchClient;
 import mekanism.research.common.base.PlayerStateResearch;
 import mekanism.research.common.capabilities.ResearchPlayerCapability;
 import mekanism.research.common.capabilities.ResearchPlayerCapabilityStorage;
+import mekanism.research.common.capabilities.ResearchViewCapability;
+import mekanism.research.common.capabilities.interfaces.IResearchView;
 import mekanism.research.common.config.MekanismResearchConfig;
 import mekanism.research.common.config.ResearchConfig;
 import mekanism.research.common.content.accelerator.ParticleAcceleratorCache;
@@ -74,6 +77,7 @@ public class MekanismResearch implements IModule {
         // Register Capabilities
         CapabilityManager.INSTANCE.register(ResearchPlayerCapability.class, new ResearchPlayerCapabilityStorage(),
                 () -> new ResearchPlayerCapability(500_000_000L, null));
+        CapabilityManager.INSTANCE.register(IResearchView.class, new DefaultStorageHelper.NullStorage<>(), ResearchViewCapability::new);
 
         //Finalization
         Mekanism.logger.info("Loaded 'Mekanism Research' module.");

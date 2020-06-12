@@ -1,5 +1,8 @@
 {
   "block.mekanismresearch.particle_accelerator_casing": "Particle Accelerator Casing",
+  "block.mekanismresearch.research_terminal": "Research Terminal",
   "description.mekanismresearch.particle_accelerator_casing": "Reinforced Casing that can be used in the Particle Accelerator multiblock",
-  "gui.mekanismresearch.power": "Power: %s"
+  "description.mekanismresearch.research_terminal": "Powered Terminal for viewing research data",
+  "gui.mekanismresearch.power": "Power: %s",
+  "gui.mekanismresearch.research": "Research Points: %s"
 }
