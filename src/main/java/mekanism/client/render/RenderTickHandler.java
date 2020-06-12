@@ -14,7 +14,6 @@ import mekanism.api.RelativeSide;
 import mekanism.api.energy.IEnergyContainer;
 import mekanism.api.math.FloatingLong;
 import mekanism.client.MekanismClient;
-import mekanism.client.MekanismKeyHandler;
 import mekanism.client.gui.GuiUtils;
 import mekanism.client.gui.element.bar.GuiBar;
 import mekanism.client.render.MekanismRenderer.Model3D;
@@ -33,15 +32,12 @@ import mekanism.common.item.gear.ItemFlamethrower;
 import mekanism.common.item.gear.ItemMekaSuitArmor;
 import mekanism.common.item.interfaces.IItemHUDProvider;
 import mekanism.common.item.interfaces.IModeItem;
-import mekanism.common.item.interfaces.IRadialModeItem;
-import mekanism.common.item.interfaces.IRadialSelectorEnum;
 import mekanism.common.lib.Color;
 import mekanism.common.lib.effect.BoltEffect;
 import mekanism.common.lib.math.Pos3D;
 import mekanism.common.lib.radiation.RadiationManager;
 import mekanism.common.lib.radiation.RadiationManager.RadiationScale;
 import mekanism.common.lib.transmitter.TransmissionType;
-import mekanism.common.network.PacketRadialModeChange;
 import mekanism.common.registries.MekanismParticleTypes;
 import mekanism.common.tile.TileEntityBoundingBlock;
 import mekanism.common.tile.component.TileComponentConfig;
@@ -98,8 +94,6 @@ public class RenderTickHandler {
     private static final double HUD_SCALE = 0.6;
 
     private static HUDRenderer hudRenderer = new HUDRenderer();
-
-    private RadialSelectorRenderer<?> selectorRenderer;
 
     public static int modeSwitchTimer = 0;
     public static double prevRadiation = 0;
@@ -189,45 +183,7 @@ public class RenderTickHandler {
                     hudRenderer.renderHUD(event.getPartialTicks());
                 }
             }
-
-            if (minecraft.world != null && minecraft.currentScreen == null) {
-                ItemStack stack = minecraft.player.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
-                if (MekanismKeyHandler.handModeSwitchKey.isKeyDown() && stack.getItem() instanceof IRadialModeItem) {
-                    updateSelectorRenderer((IRadialModeItem<?>) stack.getItem());
-                    minecraft.mouseHelper.ungrabMouse();
-                    selectorRenderer.render(event.getWindow(), event.getPartialTicks());
-                } else {
-                    if (selectorRenderer != null) {
-                        selectorRenderer.updateSelection();
-                        selectorRenderer = null;
-                    }
-                    minecraft.mouseHelper.grabMouse();
-                }
-            }
         }
-    }
-
-    private <TYPE extends Enum<TYPE> & IRadialSelectorEnum<TYPE>> void updateSelectorRenderer(IRadialModeItem<TYPE> modeItem) {
-        Class<TYPE> modeClass = modeItem.getModeClass();
-        if (selectorRenderer == null || selectorRenderer.getEnumClass() != modeClass) {
-            selectorRenderer = getRadialSelectorRenderer(modeClass);
-        }
-    }
-
-    private <TYPE extends Enum<TYPE> & IRadialSelectorEnum<TYPE>> RadialSelectorRenderer<TYPE> getRadialSelectorRenderer(Class<TYPE> modeClass) {
-        return new RadialSelectorRenderer<>(modeClass, () -> {
-            if (minecraft.player != null) {
-                ItemStack s = minecraft.player.getItemStackFromSlot(EquipmentSlotType.MAINHAND);
-                if (s.getItem() instanceof IRadialModeItem) {
-                    return ((IRadialModeItem<TYPE>) s.getItem()).getMode(s);
-                }
-            }
-            return modeClass.getEnumConstants()[0];
-        }, type -> {
-            if (minecraft.player != null) {
-                Mekanism.packetHandler.sendToServer(new PacketRadialModeChange(EquipmentSlotType.MAINHAND, type.ordinal()));
-            }
-        });
     }
 
     @SubscribeEvent

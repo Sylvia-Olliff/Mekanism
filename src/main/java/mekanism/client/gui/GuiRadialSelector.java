@@ -1,15 +1,17 @@
-package mekanism.client.render;
+package mekanism.client.gui;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import org.lwjgl.opengl.GL11;
+import com.mojang.blaze3d.systems.RenderSystem;
+import mekanism.client.render.MekanismRenderer;
 import mekanism.common.item.interfaces.IRadialSelectorEnum;
-import net.minecraft.client.MainWindow;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.AbstractGui;
-import org.lwjgl.opengl.GL11;
+import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.util.text.StringTextComponent;
 
-public class RadialSelectorRenderer<TYPE extends Enum<TYPE> & IRadialSelectorEnum<TYPE>> {
+public class GuiRadialSelector<TYPE extends Enum<TYPE> & IRadialSelectorEnum<TYPE>> extends Screen {
 
     private static final float DRAWS = 300;
 
@@ -24,26 +26,27 @@ public class RadialSelectorRenderer<TYPE extends Enum<TYPE> & IRadialSelectorEnu
 
     private TYPE selection = null;
 
-    public RadialSelectorRenderer(Class<TYPE> enumClass, Supplier<TYPE> curSupplier, Consumer<TYPE> changeHandler) {
+    public GuiRadialSelector(Class<TYPE> enumClass, Supplier<TYPE> curSupplier, Consumer<TYPE> changeHandler) {
+        super(new StringTextComponent("Radial Selector Screen"));
         this.enumClass = enumClass;
         this.curSupplier = curSupplier;
         this.changeHandler = changeHandler;
         types = enumClass.getEnumConstants();
     }
 
-    public void render(MainWindow window, float partialTick) {
+    @Override
+    public void render(int mouseX, int mouseY, float partialTick) {
         // center of screen
-        float centerX = window.getScaledWidth() / 2F;
-        float centerY = window.getScaledHeight() / 2F;
+        float centerX = minecraft.getMainWindow().getScaledWidth() / 2F;
+        float centerY = minecraft.getMainWindow().getScaledHeight() / 2F;
         // scaled mouse position
-        double mouseX = (minecraft.mouseHelper.getMouseX() * window.getScaledWidth() / window.getWidth());
-        double mouseY = (minecraft.mouseHelper.getMouseY() * window.getScaledHeight() / window.getHeight());
 
         RenderSystem.pushMatrix();
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
         RenderSystem.defaultAlphaFunc();
         RenderSystem.translatef(centerX, centerY, 0);
+        RenderSystem.disableTexture();
 
         // draw base
         RenderSystem.color4f(0.3F, 0.3F, 0.3F, 0.5F);
@@ -81,6 +84,7 @@ public class RadialSelectorRenderer<TYPE extends Enum<TYPE> & IRadialSelectorEnu
 
         MekanismRenderer.resetColor();
 
+        RenderSystem.enableTexture();
         for (int i = 0; i < types.length; i++) {
             double angle = Math.toRadians(270 + 360 * ((float) i / types.length));
             float x = (float) Math.cos(angle) * (INNER + OUTER) / 2F;
@@ -101,6 +105,28 @@ public class RadialSelectorRenderer<TYPE extends Enum<TYPE> & IRadialSelectorEnu
         RenderSystem.popMatrix();
     }
 
+    @Override
+    public void removed() {
+        updateSelection();
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        // handle & ignore all key events
+        return true;
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        updateSelection();
+        return true;
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
     private void drawTorus(float startAngle, float sizeAngle) {
         GL11.glBegin(GL11.GL_QUAD_STRIP);
         float draws = DRAWS * (sizeAngle / 360F);
@@ -115,7 +141,6 @@ public class RadialSelectorRenderer<TYPE extends Enum<TYPE> & IRadialSelectorEnu
     public void updateSelection() {
         if (selection != null) {
             changeHandler.accept(selection);
-            selection = null;
         }
     }
 
