@@ -33,7 +33,12 @@ public class ParticleAcceleratorStructureValidator extends CuboidStructureValida
         Block block = state.getBlock();
 
         //TODO: Add the Port/Valve block as valid casing
-        if (BlockTypeTile.is(block, ResearchBlockTypes.PARTICLE_ACCELERATOR_CASING)) {
+        if (BlockTypeTile.is(block, ResearchBlockTypes.BASIC_PARTICLE_ACCELERATOR_CASING) ||
+            BlockTypeTile.is(block, ResearchBlockTypes.ADVANCED_PARTICLE_ACCELERATOR_CASING) ||
+            BlockTypeTile.is(block, ResearchBlockTypes.ELITE_PARTICLE_ACCELERATOR_CASING) ||
+            BlockTypeTile.is(block, ResearchBlockTypes.ULTIMATE_PARTICLE_ACCELERATOR_CASING) ||
+            BlockTypeTile.is(block, ResearchBlockTypes.CREATIVE_PARTICLE_ACCELERATOR_CASING)) {
+
             return CasingType.FRAME;
         } else {
             return CasingType.INVALID;

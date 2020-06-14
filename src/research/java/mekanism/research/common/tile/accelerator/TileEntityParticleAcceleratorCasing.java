@@ -13,8 +13,6 @@ public class TileEntityParticleAcceleratorCasing extends TileEntityMultiblock<Pa
 
     private AcceleratorTier tier;
 
-    public TileEntityParticleAcceleratorCasing() { this(ResearchBlocks.PARTICLE_ACCELERATOR_CASING); }
-
     public TileEntityParticleAcceleratorCasing(IBlockProvider blockProvider) { super(blockProvider); }
 
     @Override

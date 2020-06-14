@@ -64,6 +64,7 @@ public class ParticleAcceleratorMultiblockData extends MultiblockData {
 
         if (isOperating && ticks % TICK_FREQUENCY == 0) {
             MekanismResearch.playerStateResearch.getPlayerResearch(ownerId).addPoints(researchGenerationRate);
+            ticks = 0L;
         }
 
         return super.tick(world);
