@@ -1,9 +1,9 @@
 package mekanism.client.render.tileentity;
 
-import java.util.Random;
-import javax.annotation.ParametersAreNonnullByDefault;
 import com.google.common.base.Objects;
 import com.mojang.blaze3d.matrix.MatrixStack;
+import java.util.Random;
+import javax.annotation.ParametersAreNonnullByDefault;
 import mekanism.client.render.lib.effect.BillboardingEffectRenderer;
 import mekanism.client.render.lib.effect.BoltRenderer;
 import mekanism.common.base.ProfilerConstants;
@@ -32,10 +32,10 @@ public class RenderSPS extends MekanismTileEntityRenderer<TileEntitySPSCasing> {
 
     private static final CustomEffect CORE = new CustomEffect(MekanismUtils.getResource(ResourceType.RENDER, "energy_effect.png"));
     private static final Random rand = new Random();
-    private static float MIN_SCALE = 0.1F, MAX_SCALE = 4F;
+    private static final float MIN_SCALE = 0.1F, MAX_SCALE = 4F;
 
-    private Minecraft minecraft = Minecraft.getInstance();
-    private BoltRenderer bolts = new BoltRenderer();
+    private final Minecraft minecraft = Minecraft.getInstance();
+    private final BoltRenderer bolts = new BoltRenderer();
 
     public RenderSPS(TileEntityRendererDispatcher renderer) {
         super(renderer);

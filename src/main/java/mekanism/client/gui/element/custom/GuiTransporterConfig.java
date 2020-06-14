@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 import mekanism.api.RelativeSide;
 import mekanism.api.text.EnumColor;
-import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.client.gui.GuiMekanism;
 import mekanism.client.gui.IGuiWrapper;
 import mekanism.client.gui.element.GuiInnerScreen;
@@ -18,6 +17,7 @@ import mekanism.client.gui.element.slot.SlotType;
 import mekanism.common.Mekanism;
 import mekanism.common.MekanismLang;
 import mekanism.common.inventory.container.MekanismContainer;
+import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.network.PacketConfigurationUpdate;
 import mekanism.common.network.PacketConfigurationUpdate.ConfigurationPacket;
 import mekanism.common.network.PacketGuiInteract;
@@ -30,8 +30,8 @@ import net.minecraft.client.gui.screen.Screen;
 
 public class GuiTransporterConfig extends GuiWindow {
 
-    private List<GuiPos> slotPosList = new ArrayList<>();
-    private TileEntityMekanism tile;
+    private final List<GuiPos> slotPosList = new ArrayList<>();
+    private final TileEntityMekanism tile;
 
     public GuiTransporterConfig(IGuiWrapper gui, int x, int y, TileEntityMekanism tile) {
         super(gui, x, y, 156, 95);

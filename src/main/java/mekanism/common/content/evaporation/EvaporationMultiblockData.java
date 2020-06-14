@@ -1,6 +1,5 @@
 package mekanism.common.content.evaporation;
 
-import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import mekanism.api.IEvaporationSolar;
@@ -46,9 +45,12 @@ public class EvaporationMultiblockData extends MultiblockData implements ITileCa
     private static final int MAX_HEIGHT = 18;
     public static final double MAX_MULTIPLIER_TEMP = 3000;
 
-    @ContainerSync public BasicFluidTank inputTank;
-    @ContainerSync public BasicFluidTank outputTank;
-    @ContainerSync public BasicHeatCapacitor heatCapacitor;
+    @ContainerSync
+    public BasicFluidTank inputTank;
+    @ContainerSync
+    public BasicFluidTank outputTank;
+    @ContainerSync
+    public BasicHeatCapacitor heatCapacitor;
 
     private boolean temperatureSet;
 
@@ -68,10 +70,10 @@ public class EvaporationMultiblockData extends MultiblockData implements ITileCa
     private final IOutputHandler<@NonNull FluidStack> outputHandler;
     private final IInputHandler<@NonNull FluidStack> inputHandler;
 
-    private FluidInventorySlot inputInputSlot;
-    private OutputInventorySlot outputInputSlot;
-    private FluidInventorySlot inputOutputSlot;
-    private OutputInventorySlot outputOutputSlot;
+    private final FluidInventorySlot inputInputSlot;
+    private final OutputInventorySlot outputInputSlot;
+    private final FluidInventorySlot inputOutputSlot;
+    private final OutputInventorySlot outputOutputSlot;
 
     public EvaporationMultiblockData(TileEntityThermalEvaporationBlock tile) {
         super(tile);
@@ -228,10 +230,7 @@ public class EvaporationMultiblockData extends MultiblockData implements ITileCa
 
     private void addSolarPanel(TileEntity tile, int i) {
         if (tile != null && !tile.isRemoved()) {
-            Optional<IEvaporationSolar> capability = MekanismUtils.toOptional(CapabilityUtils.getCapability(tile, Capabilities.EVAPORATION_SOLAR_CAPABILITY, Direction.DOWN));
-            if (capability.isPresent()) {
-                solars[i] = capability.get();
-            }
+            CapabilityUtils.getCapability(tile, Capabilities.EVAPORATION_SOLAR_CAPABILITY, Direction.DOWN).ifPresent(solar -> solars[i] = solar);
         }
     }
 

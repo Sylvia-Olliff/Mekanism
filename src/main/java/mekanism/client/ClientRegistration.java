@@ -115,7 +115,6 @@ import mekanism.client.render.transmitter.RenderThermodynamicConductor;
 import mekanism.client.render.transmitter.RenderUniversalCable;
 import mekanism.common.Mekanism;
 import mekanism.common.block.interfaces.IColoredBlock;
-import mekanism.common.item.ItemProcessedResource;
 import mekanism.common.registration.impl.BlockRegistryObject;
 import mekanism.common.registration.impl.FluidRegistryObject;
 import mekanism.common.registration.impl.ItemRegistryObject;
@@ -387,7 +386,7 @@ public class ClientRegistration {
                   if (tintIndex == 1 && pos != null) {
                       TileEntityLogisticalTransporter transporter = MekanismUtils.getTileEntity(TileEntityLogisticalTransporter.class, world, pos);
                       if (transporter != null) {
-                          EnumColor renderColor = transporter.getColor();
+                          EnumColor renderColor = transporter.getTransmitter().getColor();
                           if (renderColor != null) {
                               return MekanismRenderer.getColorARGB(renderColor, 1);
                           }
@@ -397,7 +396,7 @@ public class ClientRegistration {
               }, MekanismBlocks.BASIC_LOGISTICAL_TRANSPORTER, MekanismBlocks.ADVANCED_LOGISTICAL_TRANSPORTER, MekanismBlocks.ELITE_LOGISTICAL_TRANSPORTER,
               MekanismBlocks.ULTIMATE_LOGISTICAL_TRANSPORTER);
 
-        for (Cell<ResourceType, PrimaryResource, ItemRegistryObject<? extends ItemProcessedResource>> item : MekanismItems.PROCESSED_RESOURCES.cellSet()) {
+        for (Cell<ResourceType, PrimaryResource, ItemRegistryObject<Item>> item : MekanismItems.PROCESSED_RESOURCES.cellSet()) {
             int tint = item.getColumnKey().getTint();
             itemColors.register((stack, index) -> index == 1 ? tint : -1, item.getValue());
         }

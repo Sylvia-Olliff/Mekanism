@@ -3,28 +3,28 @@ package mekanism.client;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
-import org.lwjgl.glfw.GLFW;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.settings.KeyBinding;
 import net.minecraft.client.util.InputMappings;
 import net.minecraftforge.client.settings.KeyModifier;
+import org.lwjgl.glfw.GLFW;
 
 public abstract class MekKeyHandler {
 
     /**
      * KeyBinding instances
      */
-    private KeyBinding[] keyBindings;
+    private final KeyBinding[] keyBindings;
 
     /**
      * Track which keys have been seen as pressed currently
      */
-    private BitSet keyDown;
+    private final BitSet keyDown;
 
     /**
      * Whether keys send repeated KeyDown pseudo-messages
      */
-    private BitSet repeatings;
+    private final BitSet repeatings;
 
     /**
      * Pass an array of keybindings and a repeat flag for each one

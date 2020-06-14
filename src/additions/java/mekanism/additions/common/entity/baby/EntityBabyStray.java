@@ -3,6 +3,7 @@ package mekanism.additions.common.entity.baby;
 import java.util.Random;
 import javax.annotation.Nonnull;
 import mekanism.additions.common.MekanismAdditions;
+import mekanism.additions.common.registries.AdditionsItems;
 import net.minecraft.entity.EntitySize;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.Pose;
@@ -11,10 +12,12 @@ import net.minecraft.entity.SpawnReason;
 import net.minecraft.entity.ai.attributes.IAttributeInstance;
 import net.minecraft.entity.monster.StrayEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.item.ItemStack;
 import net.minecraft.network.datasync.DataParameter;
 import net.minecraft.network.datasync.DataSerializers;
 import net.minecraft.network.datasync.EntityDataManager;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.RayTraceResult;
 import net.minecraft.world.IWorld;
 import net.minecraft.world.World;
 
@@ -63,7 +66,7 @@ public class EntityBabyStray extends StrayEntity {
     }
 
     @Override
-    protected int getExperiencePoints(PlayerEntity player) {
+    protected int getExperiencePoints(@Nonnull PlayerEntity player) {
         if (isChild()) {
             experienceValue = (int) (experienceValue * 2.5F);
         }
@@ -76,7 +79,12 @@ public class EntityBabyStray extends StrayEntity {
     }
 
     @Override
-    protected float getStandingEyeHeight(Pose pose, EntitySize size) {
+    protected float getStandingEyeHeight(@Nonnull Pose pose, @Nonnull EntitySize size) {
         return this.isChild() ? 0.93F : super.getStandingEyeHeight(pose, size);
+    }
+
+    @Override
+    public ItemStack getPickedResult(RayTraceResult target) {
+        return AdditionsItems.BABY_STRAY_SPAWN_EGG.getItemStack();
     }
 }

@@ -12,17 +12,19 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.math.Vec3d;
 
 public interface QuadTransformation {
+
     // down up north south west east
-    static final Direction[][] ROTATION_MATRIX = new Direction[][] {{ Direction.SOUTH, Direction.NORTH, Direction.DOWN, Direction.DOWN, Direction.DOWN, Direction.DOWN },
-                                                                    { Direction.NORTH, Direction.SOUTH, Direction.UP, Direction.UP, Direction.UP, Direction.UP },
-                                                                    { Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST },
-                                                                    { Direction.UP, Direction.DOWN, Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST },
-                                                                    { Direction.WEST, Direction.WEST, Direction.WEST, Direction.EAST, Direction.SOUTH, Direction.NORTH },
-                                                                    { Direction.EAST, Direction.EAST, Direction.EAST, Direction.WEST, Direction.NORTH, Direction.SOUTH }};
+    Direction[][] ROTATION_MATRIX = new Direction[][]{{Direction.SOUTH, Direction.NORTH, Direction.DOWN, Direction.DOWN, Direction.DOWN, Direction.DOWN},
+                                                      {Direction.NORTH, Direction.SOUTH, Direction.UP, Direction.UP, Direction.UP, Direction.UP},
+                                                      {Direction.DOWN, Direction.UP, Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST},
+                                                      {Direction.UP, Direction.DOWN, Direction.SOUTH, Direction.NORTH, Direction.EAST, Direction.WEST},
+                                                      {Direction.WEST, Direction.WEST, Direction.WEST, Direction.EAST, Direction.SOUTH, Direction.NORTH},
+                                                      {Direction.EAST, Direction.EAST, Direction.EAST, Direction.WEST, Direction.NORTH, Direction.SOUTH}};
 
-    static QuadTransformation identity = q -> {};
+    QuadTransformation identity = q -> {
+    };
 
-    static QuadTransformation fullbright = light(1);
+    QuadTransformation fullbright = light(1);
 
     static QuadTransformation color(Color color) {
         return new ColorTransformation(color);
@@ -37,14 +39,20 @@ public interface QuadTransformation {
     }
 
     static QuadTransformation rotate(Direction side) {
-        if (side == null)
+        if (side == null) {
             return identity;
+        }
         switch (side) {
-            case UP: return rotate(90, 0, 0);
-            case DOWN: return rotate(-90, 0, 0);
-            case WEST: return rotate(0, 90, 0);
-            case EAST: return rotate(0, -90, 0);
-            case SOUTH: return rotate(0, 180, 0);
+            case UP:
+                return rotate(90, 0, 0);
+            case DOWN:
+                return rotate(-90, 0, 0);
+            case WEST:
+                return rotate(0, 90, 0);
+            case EAST:
+                return rotate(0, -90, 0);
+            case SOUTH:
+                return rotate(0, 180, 0);
             default:
                 return identity;
         }
@@ -76,7 +84,7 @@ public interface QuadTransformation {
         return list(this, other);
     }
 
-    public class SideTransformation implements QuadTransformation {
+    class SideTransformation implements QuadTransformation {
 
         private final Direction side;
 
@@ -86,8 +94,9 @@ public interface QuadTransformation {
 
         @Override
         public void transform(Quad quad) {
-            if (side == null)
+            if (side == null) {
                 return;
+            }
             quad.setSide(ROTATION_MATRIX[quad.getSide().ordinal()][side.ordinal()]);
         }
 
@@ -102,7 +111,7 @@ public interface QuadTransformation {
         }
     }
 
-    public class ColorTransformation implements QuadTransformation {
+    class ColorTransformation implements QuadTransformation {
 
         private final Color color;
 
@@ -126,7 +135,7 @@ public interface QuadTransformation {
         }
     }
 
-    public class LightTransformation implements QuadTransformation {
+    class LightTransformation implements QuadTransformation {
 
         private final float lightU;
         private final float lightV;
@@ -152,7 +161,7 @@ public interface QuadTransformation {
         }
     }
 
-    public class RotationTransformation implements QuadTransformation {
+    class RotationTransformation implements QuadTransformation {
 
         // quaternion math isn't exact- we round to nearest ten-thousandth
         private static final double EPSILON = 10_000;
@@ -186,9 +195,9 @@ public interface QuadTransformation {
         }
     }
 
-    public class TranslationTransformation implements QuadTransformation {
+    class TranslationTransformation implements QuadTransformation {
 
-        private Vec3d translation;
+        private final Vec3d translation;
 
         public TranslationTransformation(Vec3d translation) {
             this.translation = translation;
@@ -210,10 +219,10 @@ public interface QuadTransformation {
         }
     }
 
-    public class TextureFilteredTransformation implements QuadTransformation {
+    class TextureFilteredTransformation implements QuadTransformation {
 
-        private QuadTransformation original;
-        private Predicate<ResourceLocation> verifier;
+        private final QuadTransformation original;
+        private final Predicate<ResourceLocation> verifier;
 
         public TextureFilteredTransformation(QuadTransformation original, Predicate<ResourceLocation> verifier) {
             this.original = original;
@@ -242,10 +251,10 @@ public interface QuadTransformation {
         }
     }
 
-    public static class TransformationList implements QuadTransformation {
+    class TransformationList implements QuadTransformation {
 
-        private List<QuadTransformation> list = new ArrayList<>();
-        private int hashCode;
+        private final List<QuadTransformation> list;
+        private final int hashCode;
 
         public TransformationList(List<QuadTransformation> list) {
             this.list = list;

@@ -15,11 +15,12 @@ import mekanism.client.render.MekanismRenderType;
 import mekanism.client.render.MekanismRenderer;
 import mekanism.client.render.MekanismRenderer.Model3D;
 import mekanism.common.base.ProfilerConstants;
+import mekanism.common.content.network.transmitter.DiversionTransporter;
+import mekanism.common.content.network.transmitter.DiversionTransporter.DiversionControl;
+import mekanism.common.content.network.transmitter.LogisticalTransporterBase;
 import mekanism.common.content.transporter.TransporterStack;
 import mekanism.common.item.ItemConfigurator;
 import mekanism.common.lib.inventory.HashedItem;
-import mekanism.common.tile.transmitter.TileEntityDiversionTransporter;
-import mekanism.common.tile.transmitter.TileEntityDiversionTransporter.DiversionControl;
 import mekanism.common.tile.transmitter.TileEntityLogisticalTransporterBase;
 import mekanism.common.util.MekanismUtils;
 import mekanism.common.util.TransporterUtils;
@@ -42,13 +43,13 @@ import net.minecraft.util.math.RayTraceResult.Type;
 @ParametersAreNonnullByDefault
 public class RenderLogisticalTransporter extends RenderTransmitterBase<TileEntityLogisticalTransporterBase> {
 
-    private static Map<Direction, Map<DiversionControl, Model3D>> cachedOverlays = new EnumMap<>(Direction.class);
+    private static final Map<Direction, Map<DiversionControl, Model3D>> cachedOverlays = new EnumMap<>(Direction.class);
     private static TextureAtlasSprite gunpowderIcon;
     private static TextureAtlasSprite torchOffIcon;
     private static TextureAtlasSprite torchOnIcon;
-    private ModelTransporterBox modelBox = new ModelTransporterBox();
-    private ItemEntity entityItem = new ItemEntity(EntityType.ITEM, null);
-    private EntityRenderer<? super ItemEntity> renderer = Minecraft.getInstance().getRenderManager().getRenderer(entityItem);
+    private final ModelTransporterBox modelBox = new ModelTransporterBox();
+    private final ItemEntity entityItem = new ItemEntity(EntityType.ITEM, null);
+    private final EntityRenderer<? super ItemEntity> renderer = Minecraft.getInstance().getRenderManager().getRenderer(entityItem);
 
     public RenderLogisticalTransporter(TileEntityRendererDispatcher renderer) {
         super(renderer);
@@ -63,14 +64,15 @@ public class RenderLogisticalTransporter extends RenderTransmitterBase<TileEntit
     }
 
     @Override
-    protected void render(TileEntityLogisticalTransporterBase transporter, float partialTick, MatrixStack matrix, IRenderTypeBuffer renderer, int light, int overlayLight,
+    protected void render(TileEntityLogisticalTransporterBase tile, float partialTick, MatrixStack matrix, IRenderTypeBuffer renderer, int light, int overlayLight,
           IProfiler profiler) {
+        LogisticalTransporterBase transporter = tile.getTransmitter();
         Collection<TransporterStack> inTransit = transporter.getTransit();
-        BlockPos pos = transporter.getPos();
+        BlockPos pos = tile.getPos();
         if (!inTransit.isEmpty()) {
             matrix.push();
             entityItem.setPosition(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
-            entityItem.world = transporter.getWorld();
+            entityItem.world = tile.getWorld();
 
             float partial = partialTick * transporter.tier.getSpeed();
             Collection<TransporterStack> reducedTransit = getReducedTransit(inTransit);
@@ -88,7 +90,7 @@ public class RenderLogisticalTransporter extends RenderTransmitterBase<TileEntit
             }
             matrix.pop();
         }
-        if (transporter instanceof TileEntityDiversionTransporter) {
+        if (transporter instanceof DiversionTransporter) {
             ItemStack itemStack = Minecraft.getInstance().player.inventory.getCurrentItem();
             if (!itemStack.isEmpty() && itemStack.getItem() instanceof ItemConfigurator) {
                 BlockRayTraceResult rayTraceResult = MekanismUtils.rayTrace(Minecraft.getInstance().player);
@@ -96,7 +98,7 @@ public class RenderLogisticalTransporter extends RenderTransmitterBase<TileEntit
                     matrix.push();
                     matrix.scale(0.5F, 0.5F, 0.5F);
                     matrix.translate(0.5, 0.5, 0.5);
-                    DiversionControl mode = ((TileEntityDiversionTransporter) transporter).modes[rayTraceResult.getFace().ordinal()];
+                    DiversionControl mode = ((DiversionTransporter) transporter).modes[rayTraceResult.getFace().ordinal()];
                     MekanismRenderer.renderObject(getOverlayModel(rayTraceResult.getFace(), mode), matrix, renderer.getBuffer(MekanismRenderType.resizableCuboid()),
                           MekanismRenderer.getColorARGB(255, 255, 255, 0.8F), MekanismRenderer.FULL_LIGHT);
                     matrix.pop();

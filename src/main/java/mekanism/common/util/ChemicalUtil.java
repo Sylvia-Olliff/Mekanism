@@ -16,6 +16,7 @@ import mekanism.api.DataHandlerUtils;
 import mekanism.api.NBTConstants;
 import mekanism.api.chemical.Chemical;
 import mekanism.api.chemical.ChemicalStack;
+import mekanism.api.chemical.ChemicalType;
 import mekanism.api.chemical.IChemicalHandler;
 import mekanism.api.chemical.IChemicalTank;
 import mekanism.api.chemical.gas.BasicGasTank;
@@ -24,6 +25,7 @@ import mekanism.api.chemical.gas.GasStack;
 import mekanism.api.chemical.infuse.BasicInfusionTank;
 import mekanism.api.chemical.infuse.InfuseType;
 import mekanism.api.chemical.infuse.InfusionStack;
+import mekanism.api.chemical.merged.MergedChemicalTank.Current;
 import mekanism.api.chemical.pigment.BasicPigmentTank;
 import mekanism.api.chemical.pigment.Pigment;
 import mekanism.api.chemical.pigment.PigmentStack;
@@ -37,7 +39,7 @@ import mekanism.api.providers.IInfuseTypeProvider;
 import mekanism.api.providers.IPigmentProvider;
 import mekanism.api.providers.ISlurryProvider;
 import mekanism.common.capabilities.Capabilities;
-import mekanism.common.content.transmitter.distribution.ChemicalHandlerTarget;
+import mekanism.common.content.network.distribution.ChemicalHandlerTarget;
 import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.tier.ChemicalTankTier;
 import net.minecraft.item.ItemStack;
@@ -77,19 +79,72 @@ public class ChemicalUtil {
     }
 
     /**
+     * Gets the empty stack matching the type of the input stack type
+     */
+    public static <STACK extends ChemicalStack<?>> STACK getEmptyStack(STACK stack) {
+        if (stack instanceof GasStack) {
+            return (STACK) GasStack.EMPTY;
+        } else if (stack instanceof InfusionStack) {
+            return (STACK) InfusionStack.EMPTY;
+        } else if (stack instanceof PigmentStack) {
+            return (STACK) PigmentStack.EMPTY;
+        } else if (stack instanceof SlurryStack) {
+            return (STACK) SlurryStack.EMPTY;
+        } else {
+            throw new IllegalStateException("Unknown Chemical Type: " + stack.getType().getClass().getName());
+        }
+    }
+
+    /**
+     * Compares a {@link ChemicalType} with the current type of a merged chemical tank.
+     */
+    public static boolean compareTypes(ChemicalType chemicalType, Current current) {
+        switch (chemicalType) {
+            case GAS:
+                return current == Current.GAS;
+            case INFUSION:
+                return current == Current.INFUSION;
+            case PIGMENT:
+                return current == Current.PIGMENT;
+            case SLURRY:
+                return current == Current.SLURRY;
+        }
+        throw new IllegalStateException("Unknown Chemical Type");
+    }
+
+    /**
+     * Helper to copy a chemical stack when we don't know what implementation it is.
+     *
+     * @param stack Stack to copy
+     *
+     * @return Copy of the input stack with the desired size
+     *
+     * @apiNote Should only be called if we know that copy returns STACK
+     */
+    public static <STACK extends ChemicalStack<?>> STACK copy(STACK stack) {
+        return (STACK) stack.copy();
+    }
+
+    /**
      * Helper to resize a chemical stack when we don't know what implementation it is.
      *
      * @param stack  Stack to copy
      * @param amount Desired size
      *
      * @return Copy of the input stack with the desired size
-     *
-     * @apiNote Should only be called if we know that copy returns STACK
      */
     public static <STACK extends ChemicalStack<?>> STACK copyWithAmount(STACK stack, long amount) {
-        STACK copy = (STACK) stack.copy();
-        copy.setAmount(amount);
-        return copy;
+        if (stack instanceof GasStack) {
+            return (STACK) new GasStack((GasStack) stack, amount);
+        } else if (stack instanceof InfusionStack) {
+            return (STACK) new InfusionStack((InfusionStack) stack, amount);
+        } else if (stack instanceof PigmentStack) {
+            return (STACK) new PigmentStack((PigmentStack) stack, amount);
+        } else if (stack instanceof SlurryStack) {
+            return (STACK) new SlurryStack((SlurryStack) stack, amount);
+        } else {
+            throw new IllegalStateException("Unknown Chemical Type: " + stack.getType().getClass().getName());
+        }
     }
 
     /**
@@ -243,7 +298,7 @@ public class ChemicalUtil {
         if (curHandlers > 0) {
             Set<ChemicalHandlerTarget<CHEMICAL, STACK, IChemicalHandler<CHEMICAL, STACK>>> targets = new ObjectOpenHashSet<>();
             targets.add(target);
-            return EmitUtils.sendToAcceptors(targets, curHandlers, stack.getAmount(), (STACK) stack.copy());
+            return EmitUtils.sendToAcceptors(targets, curHandlers, stack.getAmount(), ChemicalUtil.copy(stack));
         }
         return 0;
     }

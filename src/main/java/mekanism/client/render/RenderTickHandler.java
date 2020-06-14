@@ -1,5 +1,7 @@
 package mekanism.client.render;
 
+import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.systems.RenderSystem;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.LinkedHashMap;
@@ -8,8 +10,6 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 import javax.annotation.Nonnull;
-import com.mojang.blaze3d.matrix.MatrixStack;
-import com.mojang.blaze3d.systems.RenderSystem;
 import mekanism.api.RelativeSide;
 import mekanism.api.energy.IEnergyContainer;
 import mekanism.api.math.FloatingLong;
@@ -93,7 +93,7 @@ public class RenderTickHandler {
 
     private static final double HUD_SCALE = 0.6;
 
-    private static HUDRenderer hudRenderer = new HUDRenderer();
+    private static final HUDRenderer hudRenderer = new HUDRenderer();
 
     public static int modeSwitchTimer = 0;
     public static double prevRadiation = 0;

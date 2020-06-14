@@ -19,13 +19,13 @@ import mekanism.api.energy.IEnergyContainer;
 import mekanism.api.fluid.IExtendedFluidTank;
 import mekanism.api.heat.IHeatCapacitor;
 import mekanism.api.inventory.IInventorySlot;
-import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.integration.energy.EnergyCompatUtils;
 import mekanism.common.inventory.container.MekanismContainer;
 import mekanism.common.inventory.container.MekanismContainer.ISpecificContainerTracker;
 import mekanism.common.inventory.container.sync.ISyncableData;
 import mekanism.common.inventory.container.sync.SyncableBoolean;
+import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.component.config.ConfigInfo;
 import mekanism.common.tile.component.config.DataType;
@@ -51,10 +51,10 @@ import net.minecraftforge.items.CapabilityItemHandler;
 
 public class TileComponentConfig implements ITileComponent, ISpecificContainerTracker {
 
-    public TileEntityMekanism tile;
-    private Map<TransmissionType, ConfigInfo> configInfo = new EnumMap<>(TransmissionType.class);
+    public final TileEntityMekanism tile;
+    private final Map<TransmissionType, ConfigInfo> configInfo = new EnumMap<>(TransmissionType.class);
     //TODO: See if we can come up with a way of not needing this. The issue is we want this to be sorted, but getting the keyset of configInfo doesn't work for us
-    private List<TransmissionType> transmissionTypes = new ArrayList<>();
+    private final List<TransmissionType> transmissionTypes = new ArrayList<>();
 
     public TileComponentConfig(TileEntityMekanism tile, TransmissionType... types) {
         this.tile = tile;
@@ -95,7 +95,6 @@ public class TileComponentConfig implements ITileComponent, ISpecificContainerTr
         }
         tile.sendUpdatePacket();
         tile.markDirty(false);
-        //TODO - V10: We can probably remove the extra neighbor update notification
         //Notify the neighbor on that side our state changed
         MekanismUtils.notifyNeighborOfChange(tile.getWorld(), direction, tile.getPos());
     }
@@ -112,7 +111,7 @@ public class TileComponentConfig implements ITileComponent, ISpecificContainerTr
     public void addSupported(TransmissionType type) {
         if (!configInfo.containsKey(type)) {
             //TODO: ISideConfiguration#getOrientation?
-            configInfo.put(type, new ConfigInfo(() -> tile.getDirection()));
+            configInfo.put(type, new ConfigInfo(tile::getDirection));
             transmissionTypes.add(type);
         }
     }

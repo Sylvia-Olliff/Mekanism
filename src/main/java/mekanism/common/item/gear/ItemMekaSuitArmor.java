@@ -20,6 +20,7 @@ import mekanism.client.MekKeyHandler;
 import mekanism.client.MekanismKeyHandler;
 import mekanism.client.render.armor.CustomArmor;
 import mekanism.client.render.armor.MekaSuitArmor;
+import mekanism.common.Mekanism;
 import mekanism.common.MekanismLang;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.capabilities.ItemCapabilityWrapper;
@@ -274,7 +275,7 @@ public class ItemMekaSuitArmor extends ArmorItem implements IModuleContainerItem
     protected static class MekaSuitMaterial extends BaseSpecialArmorMaterial {
 
         @Override
-        public int getDamageReductionAmount(EquipmentSlotType slotType) {
+        public int getDamageReductionAmount(@Nonnull EquipmentSlotType slotType) {
             return 0;
         }
 
@@ -283,9 +284,10 @@ public class ItemMekaSuitArmor extends ArmorItem implements IModuleContainerItem
             return 0;
         }
 
+        @Nonnull
         @Override
         public String getName() {
-            return "mekasuit";
+            return Mekanism.MODID + ":mekasuit";
         }
     }
 }

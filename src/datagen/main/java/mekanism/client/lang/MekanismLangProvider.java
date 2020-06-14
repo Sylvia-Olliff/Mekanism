@@ -1,7 +1,7 @@
 package mekanism.client.lang;
 
-import java.util.Map;
 import com.google.common.collect.Table.Cell;
+import java.util.Map;
 import mekanism.api.MekanismAPI;
 import mekanism.api.chemical.slurry.Slurry;
 import mekanism.api.providers.IItemProvider;
@@ -10,7 +10,6 @@ import mekanism.api.text.EnumColor;
 import mekanism.common.Mekanism;
 import mekanism.common.MekanismLang;
 import mekanism.common.content.blocktype.FactoryType;
-import mekanism.common.item.ItemProcessedResource;
 import mekanism.common.registration.impl.BlockRegistryObject;
 import mekanism.common.registration.impl.ItemRegistryObject;
 import mekanism.common.registration.impl.SlurryRegistryObject;
@@ -28,6 +27,7 @@ import mekanism.common.resource.ResourceType;
 import mekanism.common.tier.FactoryTier;
 import mekanism.common.util.EnumUtils;
 import net.minecraft.data.DataGenerator;
+import net.minecraft.item.Item;
 
 public class MekanismLangProvider extends BaseLanguageProvider {
 
@@ -151,7 +151,7 @@ public class MekanismLangProvider extends BaseLanguageProvider {
         addTiered(MekanismItems.BASIC_CONTROL_CIRCUIT, MekanismItems.ADVANCED_CONTROL_CIRCUIT, MekanismItems.ELITE_CONTROL_CIRCUIT, MekanismItems.ULTIMATE_CONTROL_CIRCUIT, "Control Circuit");
         addTiered(MekanismItems.BASIC_TIER_INSTALLER, MekanismItems.ADVANCED_TIER_INSTALLER, MekanismItems.ELITE_TIER_INSTALLER, MekanismItems.ULTIMATE_TIER_INSTALLER, "Tier Installer");
 
-        for (Cell<ResourceType, PrimaryResource, ItemRegistryObject<? extends ItemProcessedResource>> item : MekanismItems.PROCESSED_RESOURCES.cellSet()) {
+        for (Cell<ResourceType, PrimaryResource, ItemRegistryObject<Item>> item : MekanismItems.PROCESSED_RESOURCES.cellSet()) {
             String resourceName = formatAndCapitalize(item.getColumnKey().getName());
             switch (item.getRowKey()) {
                 case SHARD:
@@ -786,11 +786,10 @@ public class MekanismLangProvider extends BaseLanguageProvider {
         add(MekanismLang.NETWORK_DESCRIPTION, "[%s] %s transmitters, %s acceptors.");
         add(MekanismLang.INVENTORY_NETWORK, "InventoryNetwork");
         add(MekanismLang.FLUID_NETWORK, "FluidNetwork");
-        add(MekanismLang.GAS_NETWORK, "GasNetwork");
+        add(MekanismLang.CHEMICAL_NETWORK, "ChemicalNetwork");
         add(MekanismLang.HEAT_NETWORK, "HeatNetwork");
         add(MekanismLang.ENERGY_NETWORK, "EnergyNetwork");
         add(MekanismLang.NO_NETWORK, "No Network");
-        add(MekanismLang.NOT_APPLICABLE, "Not Applicable");
         add(MekanismLang.HEAT_NETWORK_STORED, "%s above ambient");
         add(MekanismLang.HEAT_NETWORK_FLOW, "%s transferred to acceptors, %s lost to environment.");
         add(MekanismLang.HEAT_NETWORK_FLOW_EFFICIENCY, "%s transferred to acceptors, %s lost to environment, %s efficiency.");

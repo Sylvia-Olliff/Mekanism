@@ -1,9 +1,9 @@
 package mekanism.generators.common.content.fission;
 
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.Set;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import mekanism.api.Action;
 import mekanism.api.Coord4D;
 import mekanism.api.NBTConstants;
@@ -54,7 +54,7 @@ public class FissionReactorMultiblockData extends MultiblockData implements IVal
     public static final long BURN_PER_ASSEMBLY = 1;
     private static final double EXPLOSION_CHANCE = 1D / (512_000);
 
-    private Set<ITileHeatHandler> heatHandlers = new ObjectOpenHashSet<>();
+    private final Set<ITileHeatHandler> heatHandlers = new ObjectOpenHashSet<>();
 
     public Set<FormedAssembly> assemblies = new LinkedHashSet<>();
     @ContainerSync

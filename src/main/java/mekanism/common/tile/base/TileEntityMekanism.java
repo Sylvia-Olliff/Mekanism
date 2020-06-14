@@ -1,5 +1,6 @@
 package mekanism.common.tile.base;
 
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -8,7 +9,6 @@ import java.util.Set;
 import java.util.function.IntSupplier;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import mekanism.api.Action;
 import mekanism.api.DataHandlerUtils;
 import mekanism.api.IMekWrench;
@@ -242,12 +242,7 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
         capabilityHandlerManagers.add(energyHandlerManager = new EnergyHandlerManager(getInitialEnergyContainers(), this));
         capabilityHandlerManagers.add(heatHandlerManager = new HeatHandlerManager(getInitialHeatCapacitors(), this));
         capabilityHandlerManagers.add(itemHandlerManager = new ItemHandlerManager(getInitialInventory(), this));
-        for (ICapabilityHandlerManager<?> capabilityHandlerManager : capabilityHandlerManagers) {
-            //Add all managers that we support in our tile, as capability resolvers
-            if (capabilityHandlerManager.canHandle()) {
-                addCapabilityResolver(capabilityHandlerManager);
-            }
-        }
+        addCapabilityResolvers(capabilityHandlerManagers);
         frequencyComponent = new TileComponentFrequency(this);
         if (supportsUpgrades()) {
             upgradeComponent = new TileComponentUpgrade(this, UpgradeInventorySlot.of(this, getSupportedUpgrade()));
@@ -352,8 +347,18 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
     }
 
     @Override
+    public final boolean canHandleGas() {
+        return gasHandlerManager.canHandle();
+    }
+
+    @Override
     public final boolean canHandleInfusion() {
         return infusionHandlerManager.canHandle();
+    }
+
+    @Override
+    public final boolean canHandlePigment() {
+        return pigmentHandlerManager.canHandle();
     }
 
     @Override
@@ -364,11 +369,6 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
     @Override
     public final boolean canHandleFluid() {
         return fluidHandlerManager.canHandle();
-    }
-
-    @Override
-    public final boolean canHandleGas() {
-        return gasHandlerManager.canHandle();
     }
 
     @Override
@@ -545,7 +545,7 @@ public abstract class TileEntityMekanism extends CapabilityTileEntity implements
     }
 
     @Override
-    public void read(CompoundNBT nbtTags) {
+    public void read(@Nonnull CompoundNBT nbtTags) {
         super.read(nbtTags);
         redstone = nbtTags.getBoolean(NBTConstants.REDSTONE);
         for (ITileComponent component : components) {

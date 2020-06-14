@@ -13,7 +13,6 @@ import mekanism.api.math.FloatingLong;
 import mekanism.api.providers.IBlockProvider;
 import mekanism.api.recipes.MekanismRecipe;
 import mekanism.api.recipes.cache.CachedRecipe;
-import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.base.ProcessInfo;
 import mekanism.common.block.attribute.Attribute;
 import mekanism.common.block.attribute.AttributeFactoryType;
@@ -31,6 +30,7 @@ import mekanism.common.inventory.container.sync.SyncableBoolean;
 import mekanism.common.inventory.container.sync.SyncableFloatingLong;
 import mekanism.common.inventory.container.sync.SyncableInt;
 import mekanism.common.inventory.slot.EnergyInventorySlot;
+import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.tier.FactoryTier;
 import mekanism.common.tile.base.TileEntityMekanism;
 import mekanism.common.tile.component.TileComponentConfig;
@@ -51,7 +51,7 @@ public abstract class TileEntityFactory<RECIPE extends MekanismRecipe> extends T
       ITileCachedRecipeHolder<RECIPE> {
 
     private final CachedRecipe<RECIPE>[] cachedRecipes;
-    private boolean[] activeStates;
+    private final boolean[] activeStates;
     protected ProcessInfo[] processInfoSlots;
     /**
      * This Factory's tier.
@@ -276,7 +276,7 @@ public abstract class TileEntityFactory<RECIPE extends MekanismRecipe> extends T
     }
 
     @Override
-    public void read(CompoundNBT nbtTags) {
+    public void read(@Nonnull CompoundNBT nbtTags) {
         super.read(nbtTags);
         sorting = nbtTags.getBoolean(NBTConstants.SORTING);
         for (int i = 0; i < tier.processes; i++) {

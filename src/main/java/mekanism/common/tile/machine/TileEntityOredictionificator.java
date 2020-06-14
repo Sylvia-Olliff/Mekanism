@@ -13,7 +13,6 @@ import mekanism.api.Action;
 import mekanism.api.IConfigCardAccess.ISpecialConfigData;
 import mekanism.api.NBTConstants;
 import mekanism.api.RelativeSide;
-import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.capabilities.Capabilities;
 import mekanism.common.capabilities.holder.slot.IInventorySlotHolder;
 import mekanism.common.capabilities.holder.slot.InventorySlotHelper;
@@ -27,6 +26,7 @@ import mekanism.common.inventory.container.sync.list.SyncableFilterList;
 import mekanism.common.inventory.slot.InputInventorySlot;
 import mekanism.common.inventory.slot.OutputInventorySlot;
 import mekanism.common.lib.HashList;
+import mekanism.common.lib.transmitter.TransmissionType;
 import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.tile.component.TileComponentConfig;
 import mekanism.common.tile.component.TileComponentEjector;
@@ -50,7 +50,7 @@ import net.minecraftforge.common.util.Constants.NBT;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
-//TODO - V10: Make this support other tag types, such as fluids
+//TODO - V11: Make this support other tag types, such as fluids
 public class TileEntityOredictionificator extends TileEntityConfigurableMachine implements ISpecialConfigData, ISustainedData, ITileFilterHolder<OredictionificatorFilter> {
 
     public static final Map<String, List<String>> possibleFilters = new Object2ObjectOpenHashMap<>();
@@ -149,7 +149,7 @@ public class TileEntityOredictionificator extends TileEntityConfigurableMachine 
     }
 
     @Override
-    public void read(CompoundNBT nbtTags) {
+    public void read(@Nonnull CompoundNBT nbtTags) {
         super.read(nbtTags);
         setConfigurationData(nbtTags);
     }
@@ -238,7 +238,7 @@ public class TileEntityOredictionificator extends TileEntityConfigurableMachine 
         }));
     }
 
-    //TODO - V10: Rewrite this to be more efficient and also cache various values, with support for tags for fluids and other types
+    //TODO - V11: Rewrite this to be more efficient and also cache various values, with support for tags for fluids and other types
     public static class OredictionificatorFilter extends BaseFilter<OredictionificatorFilter> {
 
         private ResourceLocation filterLocation;

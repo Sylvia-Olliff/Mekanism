@@ -1,13 +1,13 @@
 package mekanism.common.network;
 
 import java.util.UUID;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import javax.annotation.Nonnull;
-import mekanism.api.MekanismAPI;
-import mekanism.api.chemical.gas.Gas;
-import mekanism.common.content.transmitter.EnergyNetwork;
-import mekanism.common.content.transmitter.FluidNetwork;
-import mekanism.common.content.transmitter.GasNetwork;
+import mekanism.api.chemical.merged.BoxedChemical;
+import mekanism.common.content.network.BoxedChemicalNetwork;
+import mekanism.common.content.network.EnergyNetwork;
+import mekanism.common.content.network.FluidNetwork;
 import mekanism.common.lib.transmitter.DynamicBufferedNetwork;
 import mekanism.common.lib.transmitter.DynamicNetwork;
 import mekanism.common.lib.transmitter.TransmitterNetworkRegistry;
@@ -22,7 +22,7 @@ public class PacketTransmitterUpdate {
     private final UUID networkID;
     private final float scale;
     @Nonnull
-    private Gas gas = MekanismAPI.EMPTY_GAS;
+    private BoxedChemical chemical = BoxedChemical.EMPTY;
     @Nonnull
     private FluidStack fluidStack = FluidStack.EMPTY;
 
@@ -30,9 +30,9 @@ public class PacketTransmitterUpdate {
         this(network, PacketType.ENERGY);
     }
 
-    public PacketTransmitterUpdate(GasNetwork network, @Nonnull Gas gas) {
-        this(network, PacketType.GAS);
-        this.gas = gas;
+    public PacketTransmitterUpdate(BoxedChemicalNetwork network, @Nonnull BoxedChemical chemical) {
+        this(network, PacketType.CHEMICAL);
+        this.chemical = chemical;
     }
 
     public PacketTransmitterUpdate(FluidNetwork network, @Nonnull FluidStack fluidStack) {
@@ -57,14 +57,12 @@ public class PacketTransmitterUpdate {
         }
         context.get().enqueueWork(() -> {
             DynamicNetwork<?, ?, ?> clientNetwork = TransmitterNetworkRegistry.getInstance().getClientNetwork(message.networkID);
-            //Note: We set the information even if opaque transmitters is true in case the client turns the config setting off
-            // so that they will have the proper information to then render
-            if (clientNetwork instanceof DynamicBufferedNetwork) {
-                if (message.packetType == PacketType.GAS) {
-                    if (clientNetwork instanceof GasNetwork) {
-                        ((GasNetwork) clientNetwork).setLastGas(message.gas);
-                    }
-                } else if (message.packetType == PacketType.FLUID && clientNetwork instanceof FluidNetwork) {
+            if (clientNetwork != null && message.packetType.networkTypeMatches(clientNetwork)) {
+                //Note: We set the information even if opaque transmitters is true in case the client turns the config setting off
+                // so that they will have the proper information to then render
+                if (message.packetType == PacketType.CHEMICAL) {
+                    ((BoxedChemicalNetwork) clientNetwork).setLastChemical(message.chemical);
+                } else if (message.packetType == PacketType.FLUID) {
                     ((FluidNetwork) clientNetwork).setLastFluid(message.fluidStack);
                 }
                 ((DynamicBufferedNetwork<?, ?, ?, ?>) clientNetwork).currentScale = message.scale;
@@ -78,26 +76,36 @@ public class PacketTransmitterUpdate {
         buf.writeUniqueId(pkt.networkID);
         buf.writeFloat(pkt.scale);
         BasePacketHandler.log("Sending '" + pkt.packetType + "' update message for network with id " + pkt.networkID);
-        if (pkt.packetType == PacketType.GAS) {
-            buf.writeRegistryId(pkt.gas);
-        } else if (pkt.packetType == PacketType.FLUID) {
+        if (pkt.packetType == PacketType.FLUID) {
             pkt.fluidStack.writeToPacket(buf);
+        } else if (pkt.packetType == PacketType.CHEMICAL) {
+            pkt.chemical.write(buf);
         }
     }
 
     public static PacketTransmitterUpdate decode(PacketBuffer buf) {
         PacketTransmitterUpdate packet = new PacketTransmitterUpdate(buf.readEnumValue(PacketType.class), buf.readUniqueId(), buf.readFloat());
-        if (packet.packetType == PacketType.GAS) {
-            packet.gas = buf.readRegistryId();
-        } else if (packet.packetType == PacketType.FLUID) {
+        if (packet.packetType == PacketType.FLUID) {
             packet.fluidStack = FluidStack.readFromPacket(buf);
+        } else if (packet.packetType == PacketType.CHEMICAL) {
+            packet.chemical = BoxedChemical.read(buf);
         }
         return packet;
     }
 
     public enum PacketType {
-        ENERGY,
-        GAS,
-        FLUID
+        ENERGY(net -> net instanceof EnergyNetwork),
+        FLUID(net -> net instanceof FluidNetwork),
+        CHEMICAL(net -> net instanceof BoxedChemicalNetwork);
+
+        private final Predicate<DynamicNetwork<?, ?, ?>> networkTypePredicate;
+
+        PacketType(Predicate<DynamicNetwork<?, ?, ?>> networkTypePredicate) {
+            this.networkTypePredicate = networkTypePredicate;
+        }
+
+        private boolean networkTypeMatches(DynamicNetwork<?, ?, ?> network) {
+            return networkTypePredicate.test(network);
+        }
     }
 }

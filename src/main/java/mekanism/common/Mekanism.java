@@ -1,20 +1,19 @@
 package mekanism.common;
 
+import com.mojang.authlib.GameProfile;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.function.Supplier;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import com.mojang.authlib.GameProfile;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import mekanism.api.Coord4D;
 import mekanism.api.MekanismAPI;
 import mekanism.api.NBTConstants;
-import mekanism.common.lib.transmitter.TransmitterNetworkRegistry;
-import mekanism.client.ClientProxy;
-import mekanism.client.ModelLoaderRegisterHelper;
+import mekanism.api.chemical.gas.Gas;
+import mekanism.api.chemical.infuse.InfuseType;
+import mekanism.api.chemical.pigment.Pigment;
+import mekanism.api.chemical.slurry.Slurry;
+import mekanism.client.render.MekanismRenderer;
 import mekanism.common.base.IModule;
 import mekanism.common.base.KeySync;
 import mekanism.common.base.MekFakePlayer;
@@ -35,6 +34,9 @@ import mekanism.common.content.evaporation.EvaporationValidator;
 import mekanism.common.content.gear.Modules;
 import mekanism.common.content.matrix.MatrixMultiblockData;
 import mekanism.common.content.matrix.MatrixValidator;
+import mekanism.common.content.network.BoxedChemicalNetwork.ChemicalTransferEvent;
+import mekanism.common.content.network.EnergyNetwork.EnergyTransferEvent;
+import mekanism.common.content.network.FluidNetwork.FluidTransferEvent;
 import mekanism.common.content.sps.SPSCache;
 import mekanism.common.content.sps.SPSMultiblockData;
 import mekanism.common.content.sps.SPSValidator;
@@ -50,6 +52,7 @@ import mekanism.common.lib.frequency.FrequencyType;
 import mekanism.common.lib.multiblock.MultiblockCache;
 import mekanism.common.lib.multiblock.MultiblockManager;
 import mekanism.common.lib.radiation.RadiationManager;
+import mekanism.common.lib.transmitter.TransmitterNetworkRegistry;
 import mekanism.common.network.PacketHandler;
 import mekanism.common.network.PacketTransmitterUpdate;
 import mekanism.common.recipe.bin.BinInsertRecipe;
@@ -69,9 +72,6 @@ import mekanism.common.registries.MekanismSlurries;
 import mekanism.common.registries.MekanismSounds;
 import mekanism.common.registries.MekanismTileEntityTypes;
 import mekanism.common.tags.MekanismTagManager;
-import mekanism.common.content.transmitter.EnergyNetwork.EnergyTransferEvent;
-import mekanism.common.content.transmitter.FluidNetwork.FluidTransferEvent;
-import mekanism.common.content.transmitter.GasNetwork.GasTransferEvent;
 import mekanism.common.world.GenHandler;
 import net.minecraft.resources.IFutureReloadListener;
 import net.minecraft.resources.IReloadableResourceManager;
@@ -80,12 +80,13 @@ import net.minecraft.tags.NetworkTagManager;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.world.server.ServerWorld;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegistryEvent;
 import net.minecraftforge.event.world.ChunkDataEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.fml.DeferredWorkQueue;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.common.Mod;
@@ -96,6 +97,8 @@ import net.minecraftforge.fml.event.server.FMLServerAboutToStartEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 @Mod(Mekanism.MODID)
 public class Mekanism {
@@ -116,14 +119,7 @@ public class Mekanism {
      * Mekanism proxy instance
      */
     //TODO: Remove need for having a proxy as it is the legacy way of doing things
-    //Note: Do not replace with method reference: https://gist.github.com/williewillus/353c872bcf1a6ace9921189f6100d09a#gistcomment-2876130
-    public static CommonProxy proxy = DistExecutor.runForDist(() -> getClientProxy(), () -> () -> new CommonProxy());
-
-    @OnlyIn(Dist.CLIENT)
-    private static Supplier<CommonProxy> getClientProxy() {
-        //NOTE: This extra method is needed to avoid classloading issues on servers
-        return ClientProxy::new;
-    }
+    public static CommonProxy proxy = DistExecutor.safeRunForDist(() -> CommonProxy::createClientProxy, () -> CommonProxy::new);
 
     /**
      * Mekanism mod instance
@@ -174,28 +170,23 @@ public class Mekanism {
     public Mekanism() {
         instance = this;
         MekanismConfig.registerConfigs(ModLoadingContext.get());
-        //This line just force loads the MekanismAPI from here, to make sure empty chemicals are initialized
-        // via mekanism instead of say mekanism generators or some random addon
-        logger.debug("Mekanism Debug mode: {}", MekanismAPI.debug ? "enabled" : "disabled");
 
-        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
         MinecraftForge.EVENT_BUS.addListener(this::onEnergyTransferred);
-        MinecraftForge.EVENT_BUS.addListener(this::onGasTransferred);
+        MinecraftForge.EVENT_BUS.addListener(this::onChemicalTransferred);
         MinecraftForge.EVENT_BUS.addListener(this::onLiquidTransferred);
         MinecraftForge.EVENT_BUS.addListener(this::chunkSave);
         MinecraftForge.EVENT_BUS.addListener(this::onChunkDataLoad);
         MinecraftForge.EVENT_BUS.addListener(this::onWorldLoad);
         MinecraftForge.EVENT_BUS.addListener(this::onWorldUnload);
-        modEventBus.addListener(this::commonSetup);
         MinecraftForge.EVENT_BUS.addListener(this::serverStarting);
         MinecraftForge.EVENT_BUS.addListener(this::serverStopped);
-        modEventBus.addListener(this::onConfigLoad);
-        modEventBus.addListener(this::imcQueue);
-
         MinecraftForge.EVENT_BUS.addListener(this::serverAboutToStart);
         MinecraftForge.EVENT_BUS.addListener(EventPriority.LOWEST, this::serverAboutToStartLowest);
         MinecraftForge.EVENT_BUS.addListener(BinInsertRecipe::onCrafting);
-
+        IEventBus modEventBus = FMLJavaModLoadingContext.get().getModEventBus();
+        modEventBus.addListener(this::commonSetup);
+        modEventBus.addListener(this::onConfigLoad);
+        modEventBus.addListener(this::imcQueue);
         MekanismItems.ITEMS.register(modEventBus);
         MekanismBlocks.BLOCKS.register(modEventBus);
         MekanismFluids.FLUIDS.register(modEventBus);
@@ -207,17 +198,38 @@ public class Mekanism {
         MekanismPlacements.PLACEMENTS.register(modEventBus);
         MekanismFeatures.FEATURES.register(modEventBus);
         MekanismRecipeSerializers.RECIPE_SERIALIZERS.register(modEventBus);
-        MekanismInfuseTypes.INFUSE_TYPES.register(modEventBus);
-        MekanismPigments.PIGMENTS.register(modEventBus);
-        MekanismSlurries.SLURRIES.register(modEventBus);
-        MekanismGases.GASES.register(modEventBus);
+        MekanismGases.GASES.createAndRegister(modEventBus, "gas");
+        MekanismInfuseTypes.INFUSE_TYPES.createAndRegister(modEventBus, "infuse_type");
+        MekanismPigments.PIGMENTS.createAndRegister(modEventBus, "pigment");
+        MekanismSlurries.SLURRIES.createAndRegister(modEventBus, "slurry");
+        modEventBus.addGenericListener(Gas.class, this::registerGases);
+        modEventBus.addGenericListener(InfuseType.class, this::registerInfuseTypes);
+        modEventBus.addGenericListener(Pigment.class, this::registerPigments);
+        modEventBus.addGenericListener(Slurry.class, this::registerSlurries);
         //Set our version number to match the mods.toml file, which matches the one in our build.gradle
         versionNumber = new Version(ModLoadingContext.get().getActiveContainer().getModInfo().getVersion());
 
         //Register our model loader as soon as we can to avoid it not existing when models are loaded
         // as there seems to be some odd race condition which allows for the model loader to sometimes not be loaded
         // when the client starts loading models. Even if we register our loader as early as ClientSetupEvent
-        DistExecutor.runWhenOn(Dist.CLIENT, ModelLoaderRegisterHelper::registerModelLoader);
+        DistExecutor.safeRunWhenOn(Dist.CLIENT, () -> MekanismRenderer::registerModelLoader);
+    }
+
+    //Register the empty chemicals
+    private void registerGases(RegistryEvent.Register<Gas> event) {
+        event.getRegistry().register(MekanismAPI.EMPTY_GAS);
+    }
+
+    private void registerInfuseTypes(RegistryEvent.Register<InfuseType> event) {
+        event.getRegistry().register(MekanismAPI.EMPTY_INFUSE_TYPE);
+    }
+
+    private void registerPigments(RegistryEvent.Register<Pigment> event) {
+        event.getRegistry().register(MekanismAPI.EMPTY_PIGMENT);
+    }
+
+    private void registerSlurries(RegistryEvent.Register<Slurry> event) {
+        event.getRegistry().register(MekanismAPI.EMPTY_SLURRY);
     }
 
     public static ResourceLocation rl(String path) {
@@ -227,8 +239,9 @@ public class Mekanism {
     public void setTagManager(MekanismTagManager manager) {
         if (mekanismTagManager == null) {
             mekanismTagManager = manager;
+        } else {
+            logger.warn("Mekanism Tag Manager has already been set.");
         }
-        //TODO: Else throw error
     }
 
     public MekanismTagManager getTagManager() {
@@ -238,8 +251,9 @@ public class Mekanism {
     public void setRecipeCacheManager(ReloadListener manager) {
         if (recipeCacheManager == null) {
             recipeCacheManager = manager;
+        } else {
+            logger.warn("Recipe cache manager has already been set.");
         }
-        //TODO: Else throw error
     }
 
     public ReloadListener getRecipeCacheManager() {
@@ -310,7 +324,8 @@ public class Mekanism {
         Capabilities.registerCapabilities();
 
         //Register the mod's world generators
-        GenHandler.setupWorldGeneration();
+        //noinspection deprecation
+        DeferredWorkQueue.runLater(GenHandler::setupWorldGeneration);
 
         //Register player tracker
         MinecraftForge.EVENT_BUS.register(new CommonPlayerTracker());
@@ -319,14 +334,8 @@ public class Mekanism {
         //Initialization notification
         logger.info("Version {} initializing...", versionNumber);
 
-        //Register to receive subscribed events
-        MinecraftForge.EVENT_BUS.register(this);
-
         //Register with TransmitterNetworkRegistry
         TransmitterNetworkRegistry.initiate();
-
-        //Load this module
-        hooks.hookCommonSetup();
 
         //Packet registrations
         packetHandler.initialize();
@@ -345,24 +354,15 @@ public class Mekanism {
     }
 
     private void onEnergyTransferred(EnergyTransferEvent event) {
-        try {
-            packetHandler.sendToReceivers(new PacketTransmitterUpdate(event.network), event.network);
-        } catch (Exception ignored) {
-        }
+        packetHandler.sendToReceivers(new PacketTransmitterUpdate(event.network), event.network);
     }
 
-    private void onGasTransferred(GasTransferEvent event) {
-        try {
-            packetHandler.sendToReceivers(new PacketTransmitterUpdate(event.network, event.transferType), event.network);
-        } catch (Exception ignored) {
-        }
+    private void onChemicalTransferred(ChemicalTransferEvent event) {
+        packetHandler.sendToReceivers(new PacketTransmitterUpdate(event.network, event.transferType), event.network);
     }
 
     private void onLiquidTransferred(FluidTransferEvent event) {
-        try {
-            packetHandler.sendToReceivers(new PacketTransmitterUpdate(event.network, event.fluidType), event.network);
-        } catch (Exception ignored) {
-        }
+        packetHandler.sendToReceivers(new PacketTransmitterUpdate(event.network, event.fluidType), event.network);
     }
 
     private void chunkSave(ChunkDataEvent.Save event) {

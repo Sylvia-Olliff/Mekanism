@@ -1,4 +1,4 @@
-package mekanism.common.lib.transmitter;
+package mekanism.common.lib.transmitter.acceptor;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import java.util.EnumMap;
@@ -6,7 +6,8 @@ import java.util.EnumSet;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-import mekanism.common.tile.transmitter.TileEntityTransmitter;
+import mekanism.common.content.network.transmitter.Transmitter;
+import mekanism.common.lib.transmitter.TransmitterNetworkRegistry;
 import net.minecraft.util.Direction;
 import net.minecraft.util.math.BlockPos;
 import net.minecraftforge.common.util.LazyOptional;
@@ -14,11 +15,11 @@ import net.minecraftforge.common.util.LazyOptional;
 public class NetworkAcceptorCache<ACCEPTOR> {
 
     private final Map<BlockPos, Map<Direction, LazyOptional<ACCEPTOR>>> cachedAcceptors = new Object2ObjectOpenHashMap<>();
-    private final Map<TileEntityTransmitter<ACCEPTOR, ?, ?>, Set<Direction>> changedAcceptors = new Object2ObjectOpenHashMap<>();
+    private final Map<Transmitter<ACCEPTOR, ?, ?>, Set<Direction>> changedAcceptors = new Object2ObjectOpenHashMap<>();
 
-    public void updateTransmitterOnSide(TileEntityTransmitter<ACCEPTOR, ?, ?> transmitter, Direction side) {
+    public void updateTransmitterOnSide(Transmitter<ACCEPTOR, ?, ?> transmitter, Direction side) {
         LazyOptional<ACCEPTOR> acceptor = transmitter.canConnectToAcceptor(side) ? transmitter.getAcceptor(side) : LazyOptional.empty();
-        BlockPos acceptorPos = transmitter.getPos().offset(side);
+        BlockPos acceptorPos = transmitter.getTilePos().offset(side);
         if (acceptor.isPresent()) {
             cachedAcceptors.computeIfAbsent(acceptorPos, pos -> new EnumMap<>(Direction.class)).put(side.getOpposite(), acceptor);
         } else if (cachedAcceptors.containsKey(acceptorPos)) {
@@ -44,15 +45,15 @@ public class NetworkAcceptorCache<ACCEPTOR> {
         }
     }
 
-    public void acceptorChanged(TileEntityTransmitter<ACCEPTOR, ?, ?> transmitter, Direction side) {
+    public void acceptorChanged(Transmitter<ACCEPTOR, ?, ?> transmitter, Direction side) {
         changedAcceptors.computeIfAbsent(transmitter, t -> EnumSet.noneOf(Direction.class)).add(side);
         TransmitterNetworkRegistry.registerChangedNetwork(transmitter.getTransmitterNetwork());
     }
 
     public void commit() {
         if (!changedAcceptors.isEmpty()) {
-            for (Entry<TileEntityTransmitter<ACCEPTOR, ?, ?>, Set<Direction>> entry : changedAcceptors.entrySet()) {
-                TileEntityTransmitter<ACCEPTOR, ?, ?> transmitter = entry.getKey();
+            for (Entry<Transmitter<ACCEPTOR, ?, ?>, Set<Direction>> entry : changedAcceptors.entrySet()) {
+                Transmitter<ACCEPTOR, ?, ?> transmitter = entry.getKey();
                 if (transmitter.isValid()) {
                     //Update all the changed directions
                     for (Direction side : entry.getValue()) {
@@ -64,6 +65,9 @@ public class NetworkAcceptorCache<ACCEPTOR> {
         }
     }
 
+    /**
+     * @apiNote Listeners should not be added to these LazyOptionals here as they may not correspond to an actual handler and may not get invalidated.
+     */
     public Set<Map.Entry<BlockPos, Map<Direction, LazyOptional<ACCEPTOR>>>> getAcceptorEntrySet() {
         return cachedAcceptors.entrySet();
     }

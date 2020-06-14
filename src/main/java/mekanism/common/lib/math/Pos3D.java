@@ -309,7 +309,7 @@ public class Pos3D extends Vec3d {
         q.multiply(new Quaternion(x, y, z, 0.0F));
         q.multiply(quaternion.copy().conjugate());
         return new Pos3D(q.getX(), q.getY(), q.getZ());
-     }
+    }
 
     public double[] getRotationMatrix(float angle) {
         double[] matrix = new double[16];
@@ -364,6 +364,7 @@ public class Pos3D extends Vec3d {
     }
 
     @Override
+    @SuppressWarnings("MethodDoesntCallSuperMethod")
     public Pos3D clone() {
         return new Pos3D(x, y, z);
     }

@@ -7,12 +7,11 @@ import mekanism.common.inventory.GuiComponents.IToggleEnum;
 import mekanism.common.registries.MekanismSounds;
 import net.minecraft.client.audio.SimpleSound;
 
-public class GuiDigitalIconToggle<TYPE extends Enum<TYPE> & IToggleEnum> extends GuiInnerScreen {
+public class GuiDigitalIconToggle<TYPE extends Enum<TYPE> & IToggleEnum<TYPE>> extends GuiInnerScreen {
 
-    private Supplier<TYPE> typeSupplier;
-    private Consumer<TYPE> typeSetter;
-
-    private TYPE[] options;
+    private final Supplier<TYPE> typeSupplier;
+    private final Consumer<TYPE> typeSetter;
+    private final TYPE[] options;
 
     public GuiDigitalIconToggle(IGuiWrapper gui, int x, int y, int width, int height, Class<TYPE> enumClass, Supplier<TYPE> typeSupplier, Consumer<TYPE> typeSetter) {
         super(gui, x, y, width, height);

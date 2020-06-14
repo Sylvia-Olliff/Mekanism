@@ -1,9 +1,9 @@
 package mekanism.common.tile.prefab;
 
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import java.util.UUID;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import mekanism.api.IConfigurable;
 import mekanism.api.NBTConstants;
 import mekanism.api.providers.IBlockProvider;
@@ -38,7 +38,7 @@ public abstract class TileEntityMultiblock<T extends MultiblockData> extends Til
 
     private Structure structure = Structure.INVALID;
 
-    private T defaultMultiblock = createMultiblock();
+    private final T defaultMultiblock = createMultiblock();
 
     /**
      * This multiblock's previous "has structure" state.
@@ -102,8 +102,9 @@ public abstract class TileEntityMultiblock<T extends MultiblockData> extends Til
     @Override
     protected void onUpdateServer() {
         super.onUpdateServer();
-        if (ticker >= 3)
+        if (ticker >= 3) {
             structure.tick(this);
+        }
         if (!getMultiblock().isFormed()) {
             playersUsing.forEach(PlayerEntity::closeScreen);
 
@@ -252,7 +253,7 @@ public abstract class TileEntityMultiblock<T extends MultiblockData> extends Til
     }
 
     @Override
-    public void read(CompoundNBT nbtTags) {
+    public void read(@Nonnull CompoundNBT nbtTags) {
         super.read(nbtTags);
         if (!getMultiblock().isFormed() && nbtTags.hasUniqueId(NBTConstants.INVENTORY_ID)) {
             cachedID = nbtTags.getUniqueId(NBTConstants.INVENTORY_ID);
