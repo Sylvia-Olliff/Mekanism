@@ -1,16 +1,18 @@
 package mekanism.client.model.baked;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
-import com.mojang.blaze3d.matrix.MatrixStack;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.BiPredicate;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.mojang.blaze3d.matrix.MatrixStack;
 import mekanism.client.render.lib.QuadTransformation;
+import mekanism.client.render.lib.QuadTransformation.TextureFilteredTransformation;
+import mekanism.client.render.lib.QuadUtils;
 import net.minecraft.block.BlockState;
 import net.minecraft.client.renderer.model.BakedQuad;
 import net.minecraft.client.renderer.model.IBakedModel;
@@ -18,6 +20,7 @@ import net.minecraft.client.renderer.model.ItemCameraTransforms;
 import net.minecraft.client.renderer.model.ItemOverrideList;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.Direction;
+import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.data.IModelData;
 
 public class ExtensionBakedModel<T> implements IBakedModel {
@@ -101,14 +104,34 @@ public class ExtensionBakedModel<T> implements IBakedModel {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @Nonnull Random rand, @Nonnull IModelData data) {
         List<BakedQuad> quads = original.getQuads(state, side, rand, data);
-        if (state == null) {
-            return quads;
-        }
         QuadsKey<T> key = createKey(new QuadsKey<>(state, side, rand, quads), data);
         if (key == null) {
             return quads;
         }
         return cache.getUnchecked(key);
+    }
+
+    public static class LightedBakedModel extends ExtensionBakedModel<Void> {
+
+        public LightedBakedModel(IBakedModel original) {
+            super(original);
+        }
+
+        @Override
+        protected List<BakedQuad> createQuads(QuadsKey<Void> key) {
+            return QuadUtils.transformBakedQuads(key.getQuads(), TextureFilteredTransformation.of(QuadTransformation.fullbright, rl -> rl.getPath().contains("led")));
+        }
+
+        @Override
+        public List<BakedQuad> getQuads(BlockState state, Direction side, @Nonnull Random rand) {
+            List<BakedQuad> origQuads = original.getQuads(state, side, rand);
+            return QuadUtils.transformBakedQuads(origQuads, TextureFilteredTransformation.of(QuadTransformation.fullbright, rl -> rl.getPath().contains("led")));
+        }
+
+        @Override
+        public IBakedModel handlePerspective(ItemCameraTransforms.TransformType cameraTransformType, MatrixStack mat) {
+            return ForgeHooksClient.handlePerspective(this, cameraTransformType, mat);
+        }
     }
 
     public static class QuadsKey<T> {

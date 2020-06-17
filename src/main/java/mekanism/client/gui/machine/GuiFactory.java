@@ -1,6 +1,6 @@
 package mekanism.client.gui.machine;
 
-import mekanism.client.gui.GuiMekanismTile;
+import mekanism.client.gui.GuiConfigurableTile;
 import mekanism.client.gui.element.GuiDumpButton;
 import mekanism.client.gui.element.bar.GuiChemicalBar;
 import mekanism.client.gui.element.bar.GuiVerticalPowerBar;
@@ -9,12 +9,12 @@ import mekanism.client.gui.element.progress.ProgressType;
 import mekanism.client.gui.element.tab.GuiEnergyTab;
 import mekanism.client.gui.element.tab.GuiRedstoneControlTab;
 import mekanism.client.gui.element.tab.GuiSecurityTab;
-import mekanism.client.gui.element.tab.GuiSideConfigurationTab;
 import mekanism.client.gui.element.tab.GuiSortingTab;
-import mekanism.client.gui.element.tab.GuiTransporterConfigTab;
 import mekanism.client.gui.element.tab.GuiUpgradeTab;
 import mekanism.common.MekanismLang;
+import mekanism.common.content.blocktype.FactoryType;
 import mekanism.common.inventory.container.tile.MekanismTileContainer;
+import mekanism.common.registries.MekanismBlocks;
 import mekanism.common.tier.FactoryTier;
 import mekanism.common.tile.factory.TileEntityFactory;
 import mekanism.common.tile.factory.TileEntityItemStackGasToItemStackFactory;
@@ -23,7 +23,7 @@ import mekanism.common.tile.factory.TileEntitySawingFactory;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.util.text.ITextComponent;
 
-public class GuiFactory extends GuiMekanismTile<TileEntityFactory<?>, MekanismTileContainer<TileEntityFactory<?>>> {
+public class GuiFactory extends GuiConfigurableTile<TileEntityFactory<?>, MekanismTileContainer<TileEntityFactory<?>>> {
 
     public GuiFactory(MekanismTileContainer<TileEntityFactory<?>> container, PlayerInventory inv, ITextComponent title) {
         super(container, inv, title);
@@ -44,8 +44,6 @@ public class GuiFactory extends GuiMekanismTile<TileEntityFactory<?>, MekanismTi
         addButton(new GuiRedstoneControlTab(this, tile));
         addButton(new GuiSecurityTab<>(this, tile));
         addButton(new GuiUpgradeTab(this, tile));
-        addButton(new GuiSideConfigurationTab(this, tile));
-        addButton(new GuiTransporterConfigTab(this, tile));
         addButton(new GuiSortingTab(this, tile));
         addButton(new GuiVerticalPowerBar(this, tile.getEnergyContainer(), getXSize() - 12, 16, tile instanceof TileEntitySawingFactory ? 73 : 52));
         addButton(new GuiEnergyTab(tile.getEnergyContainer(), this));
@@ -67,7 +65,29 @@ public class GuiFactory extends GuiMekanismTile<TileEntityFactory<?>, MekanismTi
         int baseXMult = tile.tier == FactoryTier.BASIC ? 38 : tile.tier == FactoryTier.ADVANCED ? 26 : 19;
         for (int i = 0; i < tile.tier.processes; i++) {
             int cacheIndex = i;
-            addButton(new GuiProgress(() -> tile.getScaledProgress(1, cacheIndex), ProgressType.DOWN, this, 4 + baseX + (i * baseXMult), 33));
+            addProgress(new GuiProgress(() -> tile.getScaledProgress(1, cacheIndex), ProgressType.DOWN, this, 4 + baseX + (i * baseXMult), 33));
+        }
+    }
+
+    private void addProgress(GuiProgress progressBar) {
+        if (tile.getFactoryType() == FactoryType.SMELTING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.ENERGIZED_SMELTER.getRegistryName()));
+        } else if (tile.getFactoryType() == FactoryType.ENRICHING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.ENRICHMENT_CHAMBER.getRegistryName()));
+        } else if (tile.getFactoryType() == FactoryType.CRUSHING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.CRUSHER.getRegistryName()));
+        } else if (tile.getFactoryType() == FactoryType.COMPRESSING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.OSMIUM_COMPRESSOR.getRegistryName()));
+        } else if (tile.getFactoryType() == FactoryType.COMBINING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.COMBINER.getRegistryName()));
+        } else if (tile.getFactoryType() == FactoryType.PURIFYING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.PURIFICATION_CHAMBER.getRegistryName()));
+        } else if (tile.getFactoryType() == FactoryType.INJECTING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.CHEMICAL_INJECTION_CHAMBER.getRegistryName()));
+        } else if (tile.getFactoryType() == FactoryType.INFUSING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.METALLURGIC_INFUSER.getRegistryName()));
+        } else if (tile.getFactoryType() == FactoryType.SAWING) {
+            addButton(progressBar.jeiCategories(MekanismBlocks.PRECISION_SAWMILL.getRegistryName()));
         }
     }
 

@@ -6,8 +6,8 @@ import javax.annotation.Nullable;
 import mekanism.api.RelativeSide;
 import mekanism.api.Upgrade;
 import mekanism.api.annotations.NonNull;
+import mekanism.api.chemical.ChemicalTankBuilder;
 import mekanism.api.chemical.attribute.ChemicalAttributeValidator;
-import mekanism.api.chemical.gas.BasicGasTank;
 import mekanism.api.chemical.gas.Gas;
 import mekanism.api.chemical.gas.GasStack;
 import mekanism.api.chemical.gas.IGasTank;
@@ -33,6 +33,7 @@ import mekanism.common.tile.interfaces.IBoundingBlock;
 import mekanism.common.tile.interfaces.ITileCachedRecipeHolder;
 import mekanism.common.util.ChemicalUtil;
 import mekanism.common.util.MekanismUtils;
+import net.minecraft.block.BlockState;
 import net.minecraft.util.math.AxisAlignedBB;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.World;
@@ -43,8 +44,8 @@ public class TileEntitySolarNeutronActivator extends TileEntityMekanism implemen
 
     public static final long MAX_GAS = 10_000;
 
-    public BasicGasTank inputTank;
-    public BasicGasTank outputTank;
+    public IGasTank inputTank;
+    public IGasTank outputTank;
 
     private CachedRecipe<GasToGasRecipe> cachedRecipe;
 
@@ -67,9 +68,9 @@ public class TileEntitySolarNeutronActivator extends TileEntityMekanism implemen
     @Override
     public IChemicalTankHolder<Gas, GasStack, IGasTank> getInitialGasTanks() {
         ChemicalTankHelper<Gas, GasStack, IGasTank> builder = ChemicalTankHelper.forSide(this::getDirection);
-        builder.addTank(inputTank = BasicGasTank.create(MAX_GAS, BasicGasTank.notExternal, BasicGasTank.alwaysTrueBi,
+        builder.addTank(inputTank = ChemicalTankBuilder.GAS.create(MAX_GAS, ChemicalTankBuilder.GAS.notExternal, ChemicalTankBuilder.GAS.alwaysTrueBi,
               gas -> containsRecipe(recipe -> recipe.getInput().testType(gas)), ChemicalAttributeValidator.ALWAYS_ALLOW, this), RelativeSide.BOTTOM);
-        builder.addTank(outputTank = BasicGasTank.output(MAX_GAS, this), RelativeSide.FRONT);
+        builder.addTank(outputTank = ChemicalTankBuilder.GAS.output(MAX_GAS, this), RelativeSide.FRONT);
         return builder.build();
     }
 
@@ -165,7 +166,7 @@ public class TileEntitySolarNeutronActivator extends TileEntityMekanism implemen
     }
 
     @Override
-    public void onBreak() {
+    public void onBreak(BlockState oldState) {
         World world = getWorld();
         if (world != null) {
             world.removeBlock(getPos().up(), false);

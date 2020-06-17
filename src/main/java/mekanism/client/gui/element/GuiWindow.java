@@ -1,6 +1,7 @@
 package mekanism.client.gui.element;
 
 import com.mojang.blaze3d.systems.RenderSystem;
+import java.util.function.Supplier;
 import mekanism.client.gui.GuiMekanism;
 import mekanism.client.gui.GuiUtils;
 import mekanism.client.gui.IGuiWrapper;
@@ -16,6 +17,7 @@ public class GuiWindow extends GuiTexturedElement {
     private static final Color OVERLAY_COLOR = Color.rgbai(60, 60, 60, 128);
 
     private Runnable closeListener;
+    private Runnable reattachListener;
 
     private boolean dragging = false;
     private double dragX, dragY;
@@ -27,9 +29,8 @@ public class GuiWindow extends GuiTexturedElement {
         super(GuiMekanism.BASE_BACKGROUND, gui, x, y, width, height);
         isOverlay = true;
         active = true;
-
         if (!isFocusOverlay()) {
-            addChild(new GuiCloseButton(gui, gui.getLeft() + x + 6, gui.getTop() + y + 6, this));
+            addChild(new GuiCloseButton(gui, this.x + 6, this.y + 6, this));
         }
     }
 
@@ -109,8 +110,17 @@ public class GuiWindow extends GuiTexturedElement {
         return false;
     }
 
-    public void setListenerTab(GuiInsetElement<?> element) {
-        closeListener = () -> element.active = true;
+    public void setListenerTab(Supplier<? extends GuiElement> elementSupplier) {
+        closeListener = () -> elementSupplier.get().active = true;
+        reattachListener = () -> elementSupplier.get().active = false;
+    }
+
+    @Override
+    public void resize(int prevLeft, int prevTop, int left, int top) {
+        super.resize(prevLeft, prevTop, left, top);
+        if (reattachListener != null) {
+            reattachListener.run();
+        }
     }
 
     public void renderBlur() {

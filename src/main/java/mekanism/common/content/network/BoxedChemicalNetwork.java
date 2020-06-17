@@ -17,20 +17,15 @@ import mekanism.api.chemical.ChemicalStack;
 import mekanism.api.chemical.ChemicalType;
 import mekanism.api.chemical.IChemicalHandler;
 import mekanism.api.chemical.IChemicalTank;
-import mekanism.api.chemical.attribute.ChemicalAttributeValidator;
-import mekanism.api.chemical.gas.BasicGasTank;
 import mekanism.api.chemical.gas.GasStack;
 import mekanism.api.chemical.gas.IGasTank;
 import mekanism.api.chemical.gas.attribute.GasAttributes;
-import mekanism.api.chemical.infuse.BasicInfusionTank;
 import mekanism.api.chemical.infuse.IInfusionTank;
 import mekanism.api.chemical.merged.BoxedChemical;
 import mekanism.api.chemical.merged.BoxedChemicalStack;
 import mekanism.api.chemical.merged.MergedChemicalTank;
 import mekanism.api.chemical.merged.MergedChemicalTank.Current;
-import mekanism.api.chemical.pigment.BasicPigmentTank;
 import mekanism.api.chemical.pigment.IPigmentTank;
-import mekanism.api.chemical.slurry.BasicSlurryTank;
 import mekanism.api.chemical.slurry.ISlurryTank;
 import mekanism.api.text.TextComponentUtil;
 import mekanism.common.Mekanism;
@@ -40,10 +35,7 @@ import mekanism.common.capabilities.chemical.dynamic.IGasTracker;
 import mekanism.common.capabilities.chemical.dynamic.IInfusionTracker;
 import mekanism.common.capabilities.chemical.dynamic.IPigmentTracker;
 import mekanism.common.capabilities.chemical.dynamic.ISlurryTracker;
-import mekanism.common.capabilities.chemical.variable.VariableCapacityGasTank;
-import mekanism.common.capabilities.chemical.variable.VariableCapacityInfusionTank;
-import mekanism.common.capabilities.chemical.variable.VariableCapacityPigmentTank;
-import mekanism.common.capabilities.chemical.variable.VariableCapacitySlurryTank;
+import mekanism.common.capabilities.chemical.variable.VariableCapacityChemicalTankBuilder;
 import mekanism.common.content.network.distribution.BoxedChemicalTransmitterSaveTarget;
 import mekanism.common.content.network.distribution.ChemicalHandlerTarget;
 import mekanism.common.content.network.transmitter.BoxedPressurizedTube;
@@ -79,10 +71,10 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
     public BoxedChemicalNetwork(UUID networkID) {
         super(networkID);
         chemicalTank = MergedChemicalTank.create(
-              VariableCapacityGasTank.create(this::getCapacity, BasicGasTank.alwaysTrueBi, BasicGasTank.alwaysTrueBi, BasicGasTank.alwaysTrue, ChemicalAttributeValidator.ALWAYS_ALLOW, this),
-              VariableCapacityInfusionTank.create(this::getCapacity, BasicInfusionTank.alwaysTrueBi, BasicInfusionTank.alwaysTrueBi, BasicInfusionTank.alwaysTrue, this),
-              VariableCapacityPigmentTank.create(this::getCapacity, BasicPigmentTank.alwaysTrueBi, BasicPigmentTank.alwaysTrueBi, BasicPigmentTank.alwaysTrue, this),
-              VariableCapacitySlurryTank.create(this::getCapacity, BasicSlurryTank.alwaysTrueBi, BasicSlurryTank.alwaysTrueBi, BasicSlurryTank.alwaysTrue, this)
+              VariableCapacityChemicalTankBuilder.GAS.createAllValid(this::getCapacity, this),
+              VariableCapacityChemicalTankBuilder.INFUSION.createAllValid(this::getCapacity, this),
+              VariableCapacityChemicalTankBuilder.PIGMENT.createAllValid(this::getCapacity, this),
+              VariableCapacityChemicalTankBuilder.SLURRY.createAllValid(this::getCapacity, this)
         );
         gasTanks = Collections.singletonList(chemicalTank.getGasTank());
         infusionTanks = Collections.singletonList(chemicalTank.getInfusionTank());
@@ -126,21 +118,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
      */
     private IChemicalTank<?, ?> getCurrentTankWithFallback() {
         Current current = chemicalTank.getCurrent();
-        return current == Current.EMPTY ? getGasTank() : getTankFromCurrent(current);
-    }
-
-    public IChemicalTank<?, ?> getTankFromCurrent(Current current) {
-        switch (current) {
-            case GAS:
-                return getGasTank();
-            case INFUSION:
-                return getInfusionTank();
-            case PIGMENT:
-                return getPigmentTank();
-            case SLURRY:
-                return getSlurryTank();
-        }
-        throw new IllegalStateException("Unknown chemical type");
+        return current == Current.EMPTY ? getGasTank() : chemicalTank.getTankFromCurrent(current);
     }
 
     @Override
@@ -173,8 +151,8 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
                     Current netCurrent = net.chemicalTank.getCurrent();
                     if (current == netCurrent) {
                         //If the chemical types match (then compare the chemicals themselves)
-                        IChemicalTank<?, ?> tank = getTankFromCurrent(current);
-                        IChemicalTank<?, ?> netTank = net.getTankFromCurrent(current);
+                        IChemicalTank<?, ?> tank = chemicalTank.getTankFromCurrent(current);
+                        IChemicalTank<?, ?> netTank = net.chemicalTank.getTankFromCurrent(current);
                         if (tank.getType() == netTank.getType()) {
                             long amount = netTank.getStored();
                             MekanismUtils.logMismatchedStackSize(tank.growStack(amount, Action.EXECUTE), amount);
@@ -217,7 +195,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
         if (current == Current.EMPTY) {
             return BoxedChemicalStack.EMPTY;
         }
-        return BoxedChemicalStack.box(getTankFromCurrent(current).getStack().copy());
+        return BoxedChemicalStack.box(chemicalTank.getTankFromCurrent(current).getStack().copy());
     }
 
     @Override
@@ -229,7 +207,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
             if (current == Current.EMPTY) {
                 setStack(chemicalStack.copy(), chemicalTank.getTankForType(chemical.getChemicalType()));
             } else if (ChemicalUtil.compareTypes(chemical.getChemicalType(), current)) {
-                IChemicalTank<?, ?> tank = getTankFromCurrent(current);
+                IChemicalTank<?, ?> tank = chemicalTank.getTankFromCurrent(current);
                 if (chemicalStack.getType() == tank.getType()) {
                     long amount = chemicalStack.getAmount();
                     MekanismUtils.logMismatchedStackSize(tank.growStack(amount, Action.EXECUTE), amount);
@@ -243,7 +221,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
         Current current = chemicalTank.getCurrent();
         if (current != Current.EMPTY) {
             long capacity = getCapacity();
-            IChemicalTank<?, ?> tank = getTankFromCurrent(current);
+            IChemicalTank<?, ?> tank = chemicalTank.getTankFromCurrent(current);
             if (tank.getStored() > capacity) {
                 MekanismUtils.logMismatchedStackSize(tank.setStackSize(capacity, Action.EXECUTE), capacity);
             }
@@ -282,7 +260,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
     protected void onLastTransmitterRemoved(@Nonnull BoxedPressurizedTube triggerTransmitter) {
         Current current = chemicalTank.getCurrent();
         if (current != Current.EMPTY) {
-            disperse(triggerTransmitter, getTankFromCurrent(current).getStack());
+            disperse(triggerTransmitter, chemicalTank.getTankFromCurrent(current).getStack());
         }
     }
 
@@ -328,7 +306,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
         if (current == Current.EMPTY) {
             prevTransferAmount = 0;
         } else {
-            IChemicalTank<?, ?> tank = getTankFromCurrent(current);
+            IChemicalTank<?, ?> tank = chemicalTank.getTankFromCurrent(current);
             prevTransferAmount = tickEmit(tank.getStack());
             MekanismUtils.logMismatchedStackSize(tank.shrinkStack(prevTransferAmount, Action.EXECUTE), prevTransferAmount);
         }
@@ -377,7 +355,8 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
                 return true;
             }
             Current otherCurrent = other.chemicalTank.getCurrent();
-            return otherCurrent == Current.EMPTY || current == otherCurrent && getTankFromCurrent(current).getType() == other.getTankFromCurrent(otherCurrent).getType();
+            return otherCurrent == Current.EMPTY || current == otherCurrent && chemicalTank.getTankFromCurrent(current).getType() ==
+                                                                               other.chemicalTank.getTankFromCurrent(otherCurrent).getType();
         }
         return false;
     }
@@ -389,7 +368,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
             if (current == Current.EMPTY || buffer.isEmpty()) {
                 return true;
             }
-            return ChemicalUtil.compareTypes(buffer.getChemicalType(), current) && getTankFromCurrent(current).getType() == buffer.getChemicalStack().getType();
+            return ChemicalUtil.compareTypes(buffer.getChemicalType(), current) && chemicalTank.getTankFromCurrent(current).getType() == buffer.getChemicalStack().getType();
         }
         return false;
     }
@@ -408,7 +387,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
     public void onContentsChanged() {
         markDirty();
         Current current = chemicalTank.getCurrent();
-        BoxedChemical type = current == Current.EMPTY ? BoxedChemical.EMPTY : BoxedChemical.box(getTankFromCurrent(current).getType());
+        BoxedChemical type = current == Current.EMPTY ? BoxedChemical.EMPTY : BoxedChemical.box(chemicalTank.getTankFromCurrent(current).getType());
         if (!lastChemical.equals(type)) {
             //If the chemical type does not match update it, and mark that we need an update
             if (!type.isEmpty()) {
@@ -422,7 +401,7 @@ public class BoxedChemicalNetwork extends DynamicBufferedNetwork<BoxedChemicalHa
         if (chemical.isEmpty()) {
             Current current = chemicalTank.getCurrent();
             if (current != Current.EMPTY) {
-                getTankFromCurrent(current).setEmpty();
+                chemicalTank.getTankFromCurrent(current).setEmpty();
             }
         } else {
             lastChemical = chemical;

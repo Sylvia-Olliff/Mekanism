@@ -11,15 +11,12 @@ import mekanism.api.DataHandlerUtils;
 import mekanism.api.NBTConstants;
 import mekanism.api.chemical.Chemical;
 import mekanism.api.chemical.ChemicalStack;
+import mekanism.api.chemical.ChemicalTankBuilder;
 import mekanism.api.chemical.IChemicalHandler;
 import mekanism.api.chemical.IChemicalTank;
-import mekanism.api.chemical.gas.BasicGasTank;
 import mekanism.api.chemical.gas.GasStack;
-import mekanism.api.chemical.infuse.BasicInfusionTank;
 import mekanism.api.chemical.infuse.InfusionStack;
-import mekanism.api.chemical.pigment.BasicPigmentTank;
 import mekanism.api.chemical.pigment.PigmentStack;
-import mekanism.api.chemical.slurry.BasicSlurryTank;
 import mekanism.api.chemical.slurry.SlurryStack;
 import mekanism.api.energy.IEnergyContainer;
 import mekanism.api.energy.IMekanismStrictEnergyHandler;
@@ -112,33 +109,41 @@ public class StorageUtils {
         InfusionStack infusionStack = StorageUtils.getStoredInfusionFromNBT(stack);
         PigmentStack pigmentStack = StorageUtils.getStoredPigmentFromNBT(stack);
         SlurryStack slurryStack = StorageUtils.getStoredSlurryFromNBT(stack);
-        //TODO - V10: Improve this further by also including the "type" of the stored substance
         if (fluidStack.isEmpty() && gasStack.isEmpty() && infusionStack.isEmpty() && pigmentStack.isEmpty() && slurryStack.isEmpty()) {
             tooltip.add(MekanismLang.EMPTY.translate());
-        } else if (!fluidStack.isEmpty()) {
-            if (isCreative) {
-                tooltip.add(MekanismLang.GENERIC_STORED.translateColored(EnumColor.ORANGE, fluidStack, EnumColor.GRAY, MekanismLang.INFINITE));
-            } else {
-                tooltip.add(MekanismLang.GENERIC_STORED_MB.translateColored(EnumColor.ORANGE, fluidStack, EnumColor.GRAY, fluidStack.getAmount()));
-            }
+            return;
+        }
+        ILangEntry type;
+        Object contents;
+        long amount;
+        if (!fluidStack.isEmpty()) {
+            contents = fluidStack;
+            amount = fluidStack.getAmount();
+            type = MekanismLang.LIQUID;
         } else {
             ChemicalStack<?> chemicalStack;
             if (!gasStack.isEmpty()) {
                 chemicalStack = gasStack;
+                type = MekanismLang.GAS;
             } else if (!infusionStack.isEmpty()) {
                 chemicalStack = infusionStack;
+                type = MekanismLang.INFUSE_TYPE;
             } else if (!pigmentStack.isEmpty()) {
                 chemicalStack = pigmentStack;
+                type = MekanismLang.PIGMENT;
             } else if (!slurryStack.isEmpty()) {
                 chemicalStack = slurryStack;
+                type = MekanismLang.SLURRY;
             } else {
                 throw new IllegalStateException("Unknown chemical");
             }
-            if (isCreative) {
-                tooltip.add(MekanismLang.GENERIC_STORED.translateColored(EnumColor.ORANGE, chemicalStack, EnumColor.GRAY, MekanismLang.INFINITE));
-            } else {
-                tooltip.add(MekanismLang.GENERIC_STORED_MB.translateColored(EnumColor.ORANGE, chemicalStack, EnumColor.GRAY, chemicalStack.getAmount()));
-            }
+            contents = chemicalStack;
+            amount = chemicalStack.getAmount();
+        }
+        if (isCreative) {
+            tooltip.add(type.translateColored(EnumColor.YELLOW, EnumColor.ORANGE, MekanismLang.GENERIC_STORED.translate(contents, EnumColor.GRAY, MekanismLang.INFINITE)));
+        } else {
+            tooltip.add(type.translateColored(EnumColor.YELLOW, EnumColor.ORANGE, MekanismLang.GENERIC_STORED_MB.translate(contents, EnumColor.GRAY, amount)));
         }
     }
 
@@ -159,7 +164,7 @@ public class StorageUtils {
      */
     @Nonnull
     public static GasStack getStoredGasFromNBT(ItemStack stack) {
-        return getStoredChemicalFromNBT(stack, BasicGasTank.createDummy(Long.MAX_VALUE), NBTConstants.GAS_TANKS);
+        return getStoredChemicalFromNBT(stack, ChemicalTankBuilder.GAS.createDummy(Long.MAX_VALUE), NBTConstants.GAS_TANKS);
     }
 
     /**
@@ -168,7 +173,7 @@ public class StorageUtils {
      */
     @Nonnull
     public static InfusionStack getStoredInfusionFromNBT(ItemStack stack) {
-        return getStoredChemicalFromNBT(stack, BasicInfusionTank.createDummy(Long.MAX_VALUE), NBTConstants.INFUSION_TANKS);
+        return getStoredChemicalFromNBT(stack, ChemicalTankBuilder.INFUSION.createDummy(Long.MAX_VALUE), NBTConstants.INFUSION_TANKS);
     }
 
     /**
@@ -177,7 +182,7 @@ public class StorageUtils {
      */
     @Nonnull
     public static PigmentStack getStoredPigmentFromNBT(ItemStack stack) {
-        return getStoredChemicalFromNBT(stack, BasicPigmentTank.createDummy(Long.MAX_VALUE), NBTConstants.PIGMENT_TANKS);
+        return getStoredChemicalFromNBT(stack, ChemicalTankBuilder.PIGMENT.createDummy(Long.MAX_VALUE), NBTConstants.PIGMENT_TANKS);
     }
 
     /**
@@ -186,7 +191,7 @@ public class StorageUtils {
      */
     @Nonnull
     public static SlurryStack getStoredSlurryFromNBT(ItemStack stack) {
-        return getStoredChemicalFromNBT(stack, BasicSlurryTank.createDummy(Long.MAX_VALUE), NBTConstants.SLURRY_TANKS);
+        return getStoredChemicalFromNBT(stack, ChemicalTankBuilder.SLURRY.createDummy(Long.MAX_VALUE), NBTConstants.SLURRY_TANKS);
     }
 
     @Nonnull
